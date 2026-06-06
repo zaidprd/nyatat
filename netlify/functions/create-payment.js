@@ -61,7 +61,7 @@ exports.handler = async (event) => {
     ],
     credit_card: { secure: true },
     callbacks: {
-      finish: "https://nyatat.netlify.app",
+      finish: "https://kapurpad.netlify.app",
     },
   };
 
