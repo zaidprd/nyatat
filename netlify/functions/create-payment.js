@@ -37,9 +37,10 @@ exports.handler = async (event) => {
     return { statusCode: 500, body: JSON.stringify({ error: "Server key Midtrans belum dikonfigurasi" }) };
   }
 
+  const isProduction = process.env.MIDTRANS_IS_PRODUCTION === "true";
   const snap = new midtransClient.Snap({
-    isProduction: process.env.MIDTRANS_IS_PRODUCTION === "true",
-    serverKey,
+    isProduction: isProduction,
+    serverKey: process.env.MIDTRANS_SERVER_KEY,
   });
 
   const parameter = {
@@ -56,6 +57,9 @@ exports.handler = async (event) => {
       },
     ],
     credit_card: { secure: true },
+    callbacks: {
+      finish: "https://nyatat.netlify.app",
+    },
   };
 
   try {

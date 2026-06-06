@@ -386,8 +386,9 @@ const aktifkanPro = (plan) => {
 // Ganti dengan URL server kamu saat production
 const PAYMENT_ENDPOINT = "/.netlify/functions/create-payment";
 
-const MIDTRANS_SNAP_URL = "https://app.sandbox.midtrans.com/snap/snap.js";
-const MIDTRANS_CLIENT_KEY = "Mid-client-lgZsuL1ZZUbJD-xB";
+// PRODUCTION. Client key Midtrans boleh publik (dipakai di browser).
+const MIDTRANS_SNAP_URL = "https://app.midtrans.com/snap/snap.js";
+const MIDTRANS_CLIENT_KEY = "Mid-client-JoLFIEenPjLyyY9P";
 
 // ═══════════════════════ NOTIFIKASI ══════════════════════════════════════════
 
