@@ -358,28 +358,26 @@ const simpanSettings = (s)   => { try { localStorage.setItem(SETTINGS_KEY, JSON.
 
 // ═══════════════════════ PRO STATUS ══════════════════════════════════════════
 
-const PRO_KEY        = "kapurpad_pro";
-const PRO_EXPIRY_KEY = "kapurpad_pro_expiry";
+const PRO_KEY          = "kapurpad_pro";
+const PRO_EXPIRY_KEY   = "kapurpad_pro_expiry";
+const PRO_LIFETIME_KEY = "kapurpad_pro_lifetime";
 
 const cekStatusPro = () => {
   try {
+    if (localStorage.getItem(PRO_LIFETIME_KEY) === "true") return true;
     const pro = localStorage.getItem(PRO_KEY);
     const exp = localStorage.getItem(PRO_EXPIRY_KEY);
     if (!pro || !exp) return false;
-    if (Date.now() > parseInt(exp)) {
-      localStorage.removeItem(PRO_KEY);
-      localStorage.removeItem(PRO_EXPIRY_KEY);
-      return false;
-    }
+    if (Date.now() > parseInt(exp)) return false;
     return true;
   } catch { return false; }
 };
 
-const aktifkanPro = (plan) => {
-  // Semua pembelian sekarang lifetime (seumur hidup). Owner & alias lama juga lifetime.
-  const durasi = 100 * 365 * 24 * 60 * 60 * 1000;
+// Aktivasi Pro selalu LIFETIME (sekali bayar, tanpa expiry). Owner mode pakai ini juga.
+const aktifkanPro = () => {
   localStorage.setItem(PRO_KEY, "true");
-  localStorage.setItem(PRO_EXPIRY_KEY, String(Date.now() + durasi));
+  localStorage.setItem(PRO_LIFETIME_KEY, "true");
+  localStorage.setItem(PRO_EXPIRY_KEY, String(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000));
 };
 
 // URL endpoint backend untuk membuat Snap Token
@@ -478,6 +476,26 @@ function GatePro({ pesan, onUpgrade, onTutup, t }) {
         <button onClick={onTutup} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:13}}>
           Nanti saja
         </button>
+      </div>
+    </div>
+  );
+}
+
+// Modal sukses pembayaran — Pro aktif selamanya
+function NotifSukses({ onTutup, t }) {
+  const terang = t && t.kartu === "#ffffff";
+  return (
+    <div style={{position:"fixed",inset:0,background:terang?"#0006":"#000d",zIndex:900,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{background:terang?"#ffffff":"#101010",border:"1px solid #f5c84244",borderRadius:22,padding:"34px 26px",maxWidth:360,width:"100%",textAlign:"center",boxShadow:terang?"0 14px 50px #0003":"0 14px 50px #000a"}}>
+        <div style={{fontSize:64,marginBottom:10}}>🎉</div>
+        <div style={{fontSize:21,fontWeight:900,color:"#f5c842",marginBottom:10,lineHeight:1.3}}>Selamat! KapurPad Pro Aktif Selamanya</div>
+        <div style={{fontSize:14,color:terang?"#666":"#999",lineHeight:1.7,marginBottom:24}}>
+          Semua fitur premium terbuka. Terima kasih sudah mendukung KapurPad! 🙏
+        </div>
+        <button onClick={onTutup} style={{
+          width:"100%",padding:"14px 0",background:"linear-gradient(135deg,#f5c842,#e8a030)",
+          border:"none",borderRadius:12,color:"#000",fontWeight:800,fontSize:15,cursor:"pointer",
+        }}>👑 Mulai Pakai Pro</button>
       </div>
     </div>
   );
@@ -1040,7 +1058,7 @@ function Seksi({ judul, children, terang }) {
 
 // ═══════════════════════ MODAL PREMIUM ═══════════════════════════════════════
 
-function ModalPremium({ onTutup, onProAktif, t }) {
+function ModalPremium({ onTutup, onSukses, tampilNotif, t }) {
   const terang = t && t.kartu === "#ffffff";
   const cSheet = terang ? "#ffffff" : "#0f0f0f";
   const cJudul = terang ? "#1a1a1a" : "#ece8e0";
@@ -1050,8 +1068,15 @@ function ModalPremium({ onTutup, onProAktif, t }) {
   const cIkonBg = terang ? "#f3f0ea" : "#1a1a1a";
   const cInfoBg = terang ? "#f7f5f0" : "#0a0a0a";
   const cXBg = terang ? "#efece6" : "#1e1e1e";
+  const cInputBg = terang ? "#f5f2ec" : "#1a1a1a";
+  const cInputBr = terang ? "#e0ddd6" : "#2a2a2a";
+  const cInputTx = terang ? "#222" : "#eee";
   const [loading, setLoading] = useState(false);
   const [pesanError, setPesanError] = useState("");
+  const [nama, setNama]   = useState("");
+  const [email, setEmail] = useState(() => { try { return localStorage.getItem("kapurpad_email") || ""; } catch { return ""; } });
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const bolehBayar = nama.trim().length >= 2 && emailValid;
 
   const fitur = [
     {ikon:"📁",judul:"Folder & Kategori",      desc:"Kelompokkan catatan dalam folder berwarna — Kerja, Pribadi, Ibadah."},
@@ -1080,36 +1105,42 @@ function ModalPremium({ onTutup, onProAktif, t }) {
   }, []);
 
   const handleBayar = async () => {
+    if (!bolehBayar) return;
     setPesanError("");
     setLoading(true);
+    try { localStorage.setItem("kapurpad_email", email.trim()); } catch {}
     try {
       const orderId = `KAPURPAD-LIFE-${Date.now()}`;
-      const harga = 25000;
 
-      // Minta snap token dari backend
+      // Minta snap token dari backend (amount ditentukan server, bukan frontend)
       const res = await fetch(PAYMENT_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_id: orderId, amount: harga, plan: "seumur" }),
+        body: JSON.stringify({ plan: "lifetime", order_id: orderId, nama: nama.trim(), email: email.trim() }),
       });
       if (!res.ok) throw new Error("Gagal menghubungi server pembayaran.");
       const { token } = await res.json();
 
+      // Simpan order yang sedang diproses → dipulihkan saat app dibuka lagi
+      try { localStorage.setItem("kapurpad_pending_order", orderId); } catch {}
+
       window.snap.pay(token, {
-        onSuccess: () => {
-          aktifkanPro("seumur");
-          onProAktif();
+        onSuccess: function () {
+          try { localStorage.removeItem("kapurpad_pending_order"); } catch {}
+          onSukses();
+        },
+        onPending: function () {
           onTutup();
+          tampilNotif?.("⏳ Pembayaran diproses. Pro aktif otomatis setelah dikonfirmasi.");
         },
-        onPending: () => {
-          setPesanError("Pembayaran pending. Selesaikan pembayaran untuk mengaktifkan Pro.");
+        onError: function () {
           setLoading(false);
+          tampilNotif?.("❌ Pembayaran gagal. Coba lagi.");
         },
-        onError: () => {
-          setPesanError("Pembayaran gagal. Silakan coba lagi.");
+        onClose: function () {
           setLoading(false);
+          tampilNotif?.("Pembayaran dibatalkan.");
         },
-        onClose: () => { setLoading(false); },
       });
     } catch (err) {
       setPesanError(err.message || "Terjadi kesalahan. Coba lagi.");
@@ -1134,14 +1165,21 @@ function ModalPremium({ onTutup, onProAktif, t }) {
           </div>
           <button onClick={onTutup} style={{background:cXBg,border:"none",borderRadius:"50%",width:32,height:32,color:"#888",cursor:"pointer",fontSize:18}}>×</button>
         </div>
-        <div style={{border:"2px solid #f5c842",borderRadius:14,padding:"18px 16px",background:"#191300",textAlign:"center",marginBottom:18,position:"relative"}}>
-          <div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:"#f5c842",color:"#000",fontSize:10,fontWeight:800,padding:"2px 10px",borderRadius:10,whiteSpace:"nowrap"}}>BAYAR SEKALI · TANPA LANGGANAN</div>
-          <div style={{color:"#f5c842",fontWeight:900,fontSize:32,letterSpacing:-1}}>Rp 25.000</div>
-          <div style={{color:"#998",fontSize:13,marginTop:2}}>Sekali bayar — akses penuh Pro selama aplikasi berjalan</div>
+        <div style={{border:"2px solid #f5c842",borderRadius:14,padding:"18px 16px",background:terang?"#fff9e6":"#191300",textAlign:"center",marginBottom:16,position:"relative"}}>
+          <div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:"#f5c842",color:"#000",fontSize:10,fontWeight:800,padding:"2px 10px",borderRadius:10,whiteSpace:"nowrap"}}>BAYAR SEKALI</div>
+          <div style={{color:terang?"#c79a16":"#f5c842",fontWeight:900,fontSize:32,letterSpacing:-1}}>Sekali Bayar — Rp 25.000</div>
+          <div style={{color:terang?"#a98f3a":"#998",fontSize:13,marginTop:2}}>Akses Pro selamanya, tanpa langganan</div>
         </div>
-        <button onClick={handleBayar} disabled={loading}
-          style={{width:"100%",padding:14,background:loading?"#5a4800":"linear-gradient(135deg,#f5c842,#e8a030)",border:"none",borderRadius:12,color:"#000",fontWeight:800,fontSize:16,cursor:loading?"not-allowed":"pointer",marginBottom:8,opacity:loading?0.7:1,transition:"all .2s"}}>
-          {loading ? "Memproses…" : "Beli Pro Sekarang — Rp 25.000"}
+        {/* Data pembeli (untuk struk) */}
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
+          <input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama lengkap"
+            style={{width:"100%",boxSizing:"border-box",background:cInputBg,border:`1px solid ${cInputBr}`,borderRadius:10,padding:"11px 13px",color:cInputTx,fontSize:14,outline:"none"}}/>
+          <input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="Email (untuk struk)"
+            style={{width:"100%",boxSizing:"border-box",background:cInputBg,border:`1px solid ${email && !emailValid ? "#e8704a" : cInputBr}`,borderRadius:10,padding:"11px 13px",color:cInputTx,fontSize:14,outline:"none"}}/>
+        </div>
+        <button onClick={handleBayar} disabled={loading || !bolehBayar}
+          style={{width:"100%",padding:14,background:(loading||!bolehBayar)?(terang?"#e6dcae":"#5a4800"):"linear-gradient(135deg,#f5c842,#e8a030)",border:"none",borderRadius:12,color:"#000",fontWeight:800,fontSize:16,cursor:(loading||!bolehBayar)?"not-allowed":"pointer",marginBottom:8,opacity:(loading||!bolehBayar)?0.7:1,transition:"all .2s"}}>
+          {loading ? "Memproses…" : bolehBayar ? "Beli Pro Sekarang — Rp 25.000" : "Isi nama & email dulu"}
         </button>
         {pesanError && (
           <div style={{textAlign:"center",fontSize:12,color:"#e84040",marginBottom:8,padding:"6px 12px",background:"#1a0000",borderRadius:8,border:"1px solid #3a0000"}}>
@@ -2644,6 +2682,7 @@ export default function App() {
   const [notif,        setNotif]        = useState(null);
   const [isPro,        setIsPro]        = useState(cekStatusPro);
   const [gatePro,      setGatePro]      = useState(null);
+  const [notifSukses,  setNotifSukses]  = useState(false);
   const [prefillKal,   setPrefillKal]   = useState(null);
   const [folders,      setFolders]      = useState(muatFolder);
   const [folderFilter, setFolderFilter] = useState("semua"); // "semua" | folder.id
@@ -2682,6 +2721,28 @@ export default function App() {
     cek();
     window.addEventListener("focus", cek);
     return () => window.removeEventListener("focus", cek);
+  }, []);
+
+  // Pulihkan Pro untuk order yang sempat pending (mis. transfer bank yang baru lunas)
+  useEffect(() => {
+    let pending;
+    try { pending = localStorage.getItem("kapurpad_pending_order"); } catch {}
+    if (!pending || cekStatusPro()) return;
+    fetch("/.netlify/functions/cek-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order_id: pending }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.transaction_status === "settlement" || data.transaction_status === "capture") {
+          aktifkanPro();
+          setIsPro(true);
+          try { localStorage.removeItem("kapurpad_pending_order"); } catch {}
+          setNotifSukses(true);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Jadwalkan notifikasi dzikir harian jika diaktifkan
@@ -2767,7 +2828,7 @@ export default function App() {
   // ── PENGATURAN ──
   if (showSettings) return (
     <HalamanPengaturan settings={settings} onUbah={setSettings} onTutup={()=>setShowSettings(false)} catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t}
-      onOwnerAktif={()=>{ aktifkanPro("owner"); setIsPro(true); tampilNotif("🔓 Mode Owner aktif — Pro unlimited"); }}/>
+      onOwnerAktif={()=>{ aktifkanPro(); setIsPro(true); tampilNotif("🔓 Mode Owner aktif — Pro Lifetime"); }}/>
   );
 
   // ── EDITOR ──
@@ -2808,7 +2869,10 @@ export default function App() {
           t={t}
         />
       )}
-      {modalPro  && <ModalPremium onTutup={()=>setModalPro(false)} onProAktif={()=>{ setIsPro(true); setGatePro(null); }} t={t}/>}
+      {modalPro  && <ModalPremium t={t} tampilNotif={tampilNotif}
+        onTutup={()=>setModalPro(false)}
+        onSukses={()=>{ aktifkanPro(); setIsPro(true); setGatePro(null); setModalPro(false); setNotifSukses(true); }}/>}
+      {notifSukses && <NotifSukses t={t} onTutup={()=>setNotifSukses(false)}/>}
       {modalTmpl && <ModalTemplate onPilih={tp=>{setTmplDipilih(tp);setModalTmpl(false);setSedangBuat(true);}} onTutup={()=>setModalTmpl(false)} isPro={isPro} onGatePro={bukaGatePro}/>}
       {modalFolder && (
         <ModalBuatFolder
@@ -2837,7 +2901,7 @@ export default function App() {
             </div>
             {isPro ? (
               <span style={{background:"#191200",border:"1px solid #f5c84266",borderRadius:20,padding:"5px 12px",color:"#f5c842",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
-                👑 Pro Aktif
+                👑 Pro
               </span>
             ) : (
               <button onClick={()=>setModalPro(true)}
@@ -3015,14 +3079,25 @@ export default function App() {
               </div>
             </div>
 
-            <div onClick={()=>setModalPro(true)} style={{background:"linear-gradient(135deg,#191200,#0e0e0e)",border:"1px solid #f5c84233",borderRadius:14,padding:16,marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
-              <span style={{fontSize:28}}>👑</span>
-              <div>
-                <div style={{color:"#f5c842",fontWeight:800,fontSize:15}}>KapurPad Pro</div>
-                <div style={{color:"#555",fontSize:12,marginTop:2}}>Folder, Asisten AI, Laporan & lebih</div>
+            {isPro ? (
+              <div style={{background:"linear-gradient(135deg,#191200,#0e0e0e)",border:"1px solid #f5c84244",borderRadius:14,padding:16,marginBottom:12,display:"flex",alignItems:"center",gap:12}}>
+                <span style={{fontSize:28}}>👑</span>
+                <div>
+                  <div style={{color:"#f5c842",fontWeight:800,fontSize:15}}>KapurPad Pro · Lifetime</div>
+                  <div style={{color:"#8a7a3a",fontSize:12,marginTop:2}}>Terima kasih sudah mendukung KapurPad! 🙏</div>
+                </div>
+                <div style={{marginLeft:"auto",fontSize:18}}>✅</div>
               </div>
-              <div style={{marginLeft:"auto",color:"#f5c842",fontSize:20}}>›</div>
-            </div>
+            ) : (
+              <div onClick={()=>setModalPro(true)} style={{background:"linear-gradient(135deg,#191200,#0e0e0e)",border:"1px solid #f5c84233",borderRadius:14,padding:16,marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+                <span style={{fontSize:28}}>👑</span>
+                <div>
+                  <div style={{color:"#f5c842",fontWeight:800,fontSize:15}}>KapurPad Pro — Rp 25.000</div>
+                  <div style={{color:"#555",fontSize:12,marginTop:2}}>Sekali bayar, selamanya · Folder, AI, Laporan & lebih</div>
+                </div>
+                <div style={{marginLeft:"auto",color:"#f5c842",fontSize:20}}>›</div>
+              </div>
+            )}
 
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
               {[

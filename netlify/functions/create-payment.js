@@ -1,10 +1,11 @@
 const midtransClient = require("midtrans-client");
 
-// Harga tunggal: Pro seumur hidup (lifetime) Rp 25.000.
+// Harga LIFETIME ditentukan server (bukan dari frontend) — Rp 25.000 sekali bayar.
 const HARGA_PRO = 25000;
 const PLAN_AMOUNT = {
-  seumur: HARGA_PRO,
+  lifetime: HARGA_PRO,
   // Alias lama agar order yang sudah terlanjur terkirim tetap valid.
+  seumur: HARGA_PRO,
   tahunan: HARGA_PRO,
   bulanan: HARGA_PRO,
 };
@@ -29,8 +30,10 @@ exports.handler = async (event) => {
 
   const amount = PLAN_AMOUNT[plan];
   if (!amount) {
-    return { statusCode: 400, body: JSON.stringify({ error: "plan tidak valid, gunakan 'seumur'" }) };
+    return { statusCode: 400, body: JSON.stringify({ error: "plan tidak valid, gunakan 'lifetime'" }) };
   }
+
+  const { nama, email } = body;
 
   const serverKey = process.env.MIDTRANS_SERVER_KEY;
   if (!serverKey) {
@@ -61,6 +64,13 @@ exports.handler = async (event) => {
       finish: "https://nyatat.netlify.app",
     },
   };
+
+  if (nama || email) {
+    parameter.customer_details = {
+      first_name: nama || "Pelanggan",
+      email: email || undefined,
+    };
+  }
 
   try {
     const transaction = await snap.createTransaction(parameter);
