@@ -844,7 +844,7 @@ function ModalPin({ mode, pinSimpan, onSukses, onBatal }) {
 
 // ═══════════════════════ PENGATURAN ══════════════════════════════════════════
 
-function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePro, onOwnerAktif, t }) {
+function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePro, onAktivasiSukses, tampilNotif, t }) {
   const terang = t && t.kartu === "#ffffff";
   const cBg = terang ? "#f0ede8" : "#080808";
   const cBorder = terang ? "#e4e0d8" : "#141414";
@@ -857,17 +857,32 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
   const [konfirmHapus, setKonfirmHapus] = useState(false);
   const [pinMode, setPinMode] = useState(null); // "buat" | "hapus"
   const [notifStatus, setNotifStatus] = useState(Notification?.permission||"default");
-  const [tapCount, setTapCount] = useState(0);
-  const tapTimer = useRef(null);
+  const [kodeInput, setKodeInput] = useState("");
+  const [kodeLoading, setKodeLoading] = useState(false);
 
-  const tapVersi = () => {
-    setTapCount(c => {
-      const baru = c + 1;
-      if (baru >= 7) { onOwnerAktif?.(); return 0; }
-      return baru;
-    });
-    clearTimeout(tapTimer.current);
-    tapTimer.current = setTimeout(() => setTapCount(0), 3000);
+  // Validasi kode aktivasi di backend (kode rahasia tidak ada di frontend)
+  const cekKode = async () => {
+    const kode = kodeInput.trim();
+    if (!kode || kodeLoading) return;
+    setKodeLoading(true);
+    try {
+      const res = await fetch("/.netlify/functions/aktivasi-kode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kode }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        onAktivasiSukses?.();
+        setKodeInput("");
+        tampilNotif?.("🔓 Kode berhasil! KapurPad Pro aktif selamanya");
+      } else {
+        tampilNotif?.("❌ Kode tidak valid");
+      }
+    } catch {
+      tampilNotif?.("❌ Gagal cek kode, coba lagi");
+    }
+    setKodeLoading(false);
   };
 
   const mintaNotif = async () => {
@@ -1032,10 +1047,29 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
           </div>
         </Seksi>
 
+        {/* Kode Aktivasi */}
+        {!isPro && (
+          <Seksi judul="KODE AKTIVASI" terang={terang}>
+            <div style={{padding:"10px 0", display:"flex", flexDirection:"column", gap:8}}>
+              <div style={{color:terang?"#888":"#666", fontSize:12}}>Punya kode aktivasi?</div>
+              <div style={{display:"flex", gap:8}}>
+                <input value={kodeInput} onChange={e=>setKodeInput(e.target.value)}
+                  onKeyDown={e=>{ if(e.key==="Enter") cekKode(); }}
+                  placeholder="Masukkan kode…"
+                  style={{flex:1, background:cInputBg, border:`1px solid ${cInputBr}`, borderRadius:8, padding:"10px 12px", color:cInputTx, fontSize:14, outline:"none"}}/>
+                <button onClick={cekKode} disabled={!kodeInput.trim()||kodeLoading}
+                  style={{padding:"10px 16px", background:(!kodeInput.trim()||kodeLoading)?(terang?"#e6dcae":"#5a4800"):"#f5c842", border:"none", borderRadius:8, color:"#000", fontWeight:700, fontSize:13, cursor:(!kodeInput.trim()||kodeLoading)?"not-allowed":"pointer", whiteSpace:"nowrap"}}>
+                  {kodeLoading ? "…" : "Aktifkan"}
+                </button>
+              </div>
+            </div>
+          </Seksi>
+        )}
+
         {/* Tentang */}
         <Seksi judul="TENTANG" terang={terang}>
           <div style={{padding:"10px 0", color:"#555", fontSize:13, lineHeight:1.8}}>
-            <div onClick={tapVersi} style={{cursor:"pointer",userSelect:"none"}}>📱 <strong style={{color:"#888"}}>KapurPad</strong> versi 1.0.0{tapCount>0&&tapCount<7?` · ${7-tapCount}`:""}</div>
+            <div>📱 <strong style={{color:terang?"#666":"#888"}}>KapurPad</strong> versi 1.0.0</div>
             <div>📦 Catatan tersimpan: {catatan.filter(n=>!n.hapus).length}</div>
             <div>💾 Data tersimpan lokal di perangkat kamu</div>
             <div style={{marginTop:8,fontSize:11}}>© 2026 KapurPad · Semua hak dilindungi</div>
@@ -2829,8 +2863,8 @@ export default function App() {
 
   // ── PENGATURAN ──
   if (showSettings) return (
-    <HalamanPengaturan settings={settings} onUbah={setSettings} onTutup={()=>setShowSettings(false)} catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t}
-      onOwnerAktif={()=>{ aktifkanPro(); setIsPro(true); tampilNotif("🔓 Mode Owner aktif — Pro Lifetime"); }}/>
+    <HalamanPengaturan settings={settings} onUbah={setSettings} onTutup={()=>setShowSettings(false)} catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tampilNotif={tampilNotif}
+      onAktivasiSukses={()=>{ aktifkanPro(); setIsPro(true); }}/>
   );
 
   // ── EDITOR ──
