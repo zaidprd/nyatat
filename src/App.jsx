@@ -469,7 +469,7 @@ function GatePro({ pesan, onUpgrade, onTutup }) {
           width:"100%",padding:"14px 0",background:"linear-gradient(135deg,#f5c842,#e8a030)",
           border:"none",borderRadius:12,color:"#000",fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:10,
         }}>
-          Upgrade Pro — Rp 25.000 selamanya
+          Upgrade Pro — Rp 25.000 sekali bayar
         </button>
         <div style={{fontSize:11,color:"#555",marginBottom:16}}>Pembayaran aman via Midtrans · QRIS, GoPay, Transfer Bank</div>
         <button onClick={onTutup} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:13}}>
@@ -1040,7 +1040,7 @@ function ModalPremium({ onTutup, onProAktif }) {
     {ikon:"📊",judul:"Laporan Mingguan",        desc:"Bar chart 7 hari, streak, total ceklis selesai, dan top mood minggu ini."},
     {ikon:"🔔",judul:"Pengingat Berulang",      desc:"Atur pengingat Sekali, Harian, Mingguan, atau Bulanan."},
     {ikon:"🎨",judul:"Tema Premium",            desc:"Tema Hutan, Laut, Kopi, dan Terang — pilih suasana favoritmu."},
-    {ikon:"∞", judul:"Catatan Unlimited",       desc:"Gratis hanya 20 catatan. Pro: tak terbatas selamanya."},
+    {ikon:"∞", judul:"Catatan Unlimited",       desc:"Gratis hanya 20 catatan. Pro: catatan tak terbatas."},
   ];
 
   // Muat Midtrans Snap script — cleanup saat modal tutup
@@ -1115,9 +1115,9 @@ function ModalPremium({ onTutup, onProAktif }) {
           <button onClick={onTutup} style={{background:"#1e1e1e",border:"none",borderRadius:"50%",width:32,height:32,color:"#888",cursor:"pointer",fontSize:18}}>×</button>
         </div>
         <div style={{border:"2px solid #f5c842",borderRadius:14,padding:"18px 16px",background:"#191300",textAlign:"center",marginBottom:18,position:"relative"}}>
-          <div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:"#f5c842",color:"#000",fontSize:10,fontWeight:800,padding:"2px 10px",borderRadius:10,whiteSpace:"nowrap"}}>BAYAR SEKALI · SELAMANYA</div>
+          <div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:"#f5c842",color:"#000",fontSize:10,fontWeight:800,padding:"2px 10px",borderRadius:10,whiteSpace:"nowrap"}}>BAYAR SEKALI · TANPA LANGGANAN</div>
           <div style={{color:"#f5c842",fontWeight:900,fontSize:32,letterSpacing:-1}}>Rp 25.000</div>
-          <div style={{color:"#998",fontSize:13,marginTop:2}}>Sekali bayar — Pro seumur hidup, tanpa langganan</div>
+          <div style={{color:"#998",fontSize:13,marginTop:2}}>Sekali bayar — akses penuh Pro selama aplikasi berjalan</div>
         </div>
         <button onClick={handleBayar} disabled={loading}
           style={{width:"100%",padding:14,background:loading?"#5a4800":"linear-gradient(135deg,#f5c842,#e8a030)",border:"none",borderRadius:12,color:"#000",fontWeight:800,fontSize:16,cursor:loading?"not-allowed":"pointer",marginBottom:8,opacity:loading?0.7:1,transition:"all .2s"}}>
@@ -1662,14 +1662,14 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
               {aiLoading?"⏳":"✨"} AI
             </button>
             {aiMenu && (
-              <div style={{position:"absolute",top:30,right:0,background:"#1c1c1c",border:"1px solid #2e2e2e",borderRadius:10,zIndex:300,minWidth:190,overflow:"hidden",boxShadow:"0 6px 20px #000a"}}>
+              <div style={{position:"absolute",top:30,right:0,background:isTerang?"#ffffff":"#1c1c1c",border:`1px solid ${isTerang?"#e2ded6":"#2e2e2e"}`,borderRadius:10,zIndex:300,minWidth:200,overflow:"hidden",boxShadow:"0 6px 20px #0003"}}>
                 <button onClick={()=>{setAiMenu(false);panggilAI("rapikan",isi);}}
-                  style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 14px",background:"none",border:"none",color:"#ddd",cursor:"pointer",fontSize:13}}>
-                  ✏️ Rapikan tulisan
+                  style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 14px",background:"none",border:"none",color:isTerang?"#333":"#ddd",cursor:"pointer",fontSize:13,textAlign:"left"}}>
+                  ✏️ Rapikan tulisan saya
                 </button>
                 <button onClick={()=>{setAiMenu(false);setAiMode("buatDari");}}
-                  style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 14px",background:"none",border:"none",borderTop:"1px solid #222",color:"#ddd",cursor:"pointer",fontSize:13}}>
-                  📝 Buat dari perintah
+                  style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 14px",background:"none",border:"none",borderTop:`1px solid ${isTerang?"#eee":"#222"}`,color:isTerang?"#333":"#ddd",cursor:"pointer",fontSize:13,textAlign:"left"}}>
+                  📝 Buat catatan dari perintah
                 </button>
               </div>
             )}
@@ -1779,15 +1779,39 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
 
 // ═══════════════════════ MODE BACA DZIKIR ════════════════════════════════════
 
-function ModeBacaDzikir({ data, judul, onTutup }) {
+function ModeBacaDzikir({ data, judul, onTutup, t, tema }) {
   const [idx, setIdx]             = useState(0);
   const [counter, setCounter]     = useState({});   // { no: count }
   const [selesai, setSelesai]     = useState([]);   // [no, ...]
-  const audioRef                  = useRef(null);
   const item                      = data[idx];
-  const isSelesai                 = selesai.includes(item.no);
-  const count                     = counter[item.no] || 0;
   const semua                     = selesai.length === data.length;
+
+  // Palet tema (ikut mode terang/gelap aplikasi)
+  const isTerang = t && t.kartu === "#ffffff";
+  const aksen = "#f5c842";
+  const C = {
+    bg:      isTerang ? "#f0ede8" : "#080808",
+    nav:     isTerang ? "#ffffff" : "#0a0a0a",
+    border:  isTerang ? "#e4e0d8" : "#1a1a1a",
+    kartu:   isTerang ? "#ffffff" : "#0e0e0e",
+    kartuBr: isTerang ? "#ece6da" : "#2a2000",
+    arab:    isTerang ? "#2a2418" : "#f5e9c4",
+    latin:   isTerang ? "#8a7a52" : "#b8a87a",
+    terjBg:  isTerang ? "#f5f2ec" : "#0c0c0c",
+    terj:    isTerang ? "#4a4a4a" : "#cccccc",
+    faeBg:   isTerang ? "#eef0f8" : "#0e0e1a",
+    faeBr:   isTerang ? "#dfe2f0" : "#1a1a3a",
+    fae:     isTerang ? "#5a5a88" : "#9999cc",
+    sub:     isTerang ? "#aaa" : "#555",
+    navBtn:  isTerang ? "#efece6" : "#1e1e1e",
+    navBtnTx:isTerang ? "#555" : "#bbbbbb",
+    navOff:  isTerang ? "#f4f1ec" : "#111111",
+    navOffTx:isTerang ? "#c8c4bc" : "#333333",
+    tutupBg: isTerang ? "#efece6" : "#1a1a1a",
+    tutupTx: isTerang ? "#666" : "#888",
+    badgeBg: isTerang ? "#fff7e0" : "#1a1400",
+    badgeBr: isTerang ? "#f0d98a" : "#3a2800",
+  };
 
   const bunyiTone = (freq = 660, dur = 0.12) => {
     try {
@@ -1803,67 +1827,52 @@ function ModeBacaDzikir({ data, judul, onTutup }) {
     } catch {}
   };
 
-  const tap = () => {
-    if (isSelesai) return;
-    const next = count + 1;
-    setCounter(p => ({ ...p, [item.no]: next }));
-    if (next >= item.dibaca) {
-      setSelesai(p => [...p, item.no]);
+  // Tap counter untuk satu item (dipakai kartu yang sedang aktif)
+  const tapItem = (it) => {
+    if (selesai.includes(it.no)) return;
+    const c = (counter[it.no] || 0) + 1;
+    setCounter(p => ({ ...p, [it.no]: c }));
+    if (c >= it.dibaca) {
+      setSelesai(p => [...p, it.no]);
       bunyiTone(880, 0.18);
       navigator.vibrate?.([80, 40, 80]);
-      // Auto-advance setelah 800ms
-      setTimeout(() => {
-        if (idx < data.length - 1) setIdx(i => i + 1);
-      }, 900);
+      setTimeout(() => { setIdx(i => (i < data.length - 1 ? i + 1 : i)); }, 900);
     } else {
       bunyiTone(440, 0.07);
       navigator.vibrate?.(30);
     }
   };
 
-  // Geser dengan animasi terlihat (drag mengikuti jari + settle), bukan ganti tiba-tiba
+  // Carousel: drag mengikuti jari, kartu sebelum & sesudah ikut terlihat bergeser
   const [dragX, setDragX]       = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [wd, setWd]             = useState(0);   // lebar kolom untuk geometri carousel
   const startX = useRef(0);
-  const lebar  = useRef(0);
 
-  // Tombol prev/next: kartu baru meluncur masuk dari sisi
-  const pindah = (arah) => {
-    if (arah > 0 && idx >= data.length - 1) { setDragX(0); return; }
-    if (arah < 0 && idx <= 0) { setDragX(0); return; }
-    const w = lebar.current || 320;
-    setDragging(true);
-    setDragX(arah > 0 ? w : -w);   // next → mulai dari kanan, prev → dari kiri
-    setIdx(i => i + arah);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      setDragging(false);
-      setDragX(0);                  // animasikan meluncur ke tengah
-    }));
-  };
-  const prev = () => pindah(-1);
-  const next = () => pindah(1);
+  const next = () => { if (idx < data.length - 1) { setDragging(false); setDragX(0); setIdx(i => i + 1); } };
+  const prev = () => { if (idx > 0)               { setDragging(false); setDragX(0); setIdx(i => i - 1); } };
 
-  const onTouchStart = (e) => { startX.current = e.targetTouches[0].clientX; setDragging(true); setDragX(0); };
+  const onTouchStart = (e) => { startX.current = e.targetTouches[0].clientX; setDragging(true); };
   const onTouchMove  = (e) => { setDragX(e.targetTouches[0].clientX - startX.current); };
   const onTouchEnd   = () => {
     const jarak = dragX;
     setDragging(false);
-    if (jarak <= -55 && idx < data.length - 1) { setIdx(i => i + 1); setDragX(0); }   // swipe kiri → berikutnya
-    else if (jarak >= 55 && idx > 0)           { setIdx(i => i - 1); setDragX(0); }   // swipe kanan → sebelumnya
-    else setDragX(0);                                                                  // batal → balik ke tengah
+    if (jarak <= -55 && idx < data.length - 1) setIdx(i => i + 1);   // swipe kiri → berikutnya
+    else if (jarak >= 55 && idx > 0)           setIdx(i => i - 1);   // swipe kanan → sebelumnya
+    setDragX(0);
   };
 
   // Layar selesai semua
   if (semua) return (
     <div style={{
       position: "fixed", top: 0, bottom: 0, left: "50%", transform: "translateX(-50%)",
-      width: "100%", maxWidth: 480, background: "#050e00", zIndex: 9999,
+      width: "100%", maxWidth: 480, background: isTerang ? "#eef5ea" : "#050e00", zIndex: 9999,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       padding: 32, boxShadow: "0 0 0 100vmax rgba(0,0,0,0.55)",
     }}>
       <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
       <div style={{ fontSize: 24, fontWeight: 900, color: "#34c776", marginBottom: 8 }}>Alhamdulillah!</div>
-      <div style={{ fontSize: 15, color: "#aaa", textAlign: "center", marginBottom: 32, lineHeight: 1.8 }}>
+      <div style={{ fontSize: 15, color: C.terj, textAlign: "center", marginBottom: 32, lineHeight: 1.8 }}>
         {judul} selesai dibaca.{"\n"}Semoga Allah menerima amal ibadahmu.
       </div>
       <button onClick={onTutup} style={{
@@ -1873,154 +1882,160 @@ function ModeBacaDzikir({ data, judul, onTutup }) {
     </div>
   );
 
+  // Geometri carousel (peek kartu sebelum & sesudah)
+  const W = wd || 360;
+  const slideW = Math.round(W * 0.88);
+  const sisi   = (W - slideW) / 2;
+  const trackX = sisi - idx * slideW + dragX;
+
   return (
     <div
-      ref={el=>{ if (el) lebar.current = el.clientWidth; }}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
       style={{
         position: "fixed", top: 0, bottom: 0, left: "50%", transform: "translateX(-50%)",
-        width: "100%", maxWidth: 480, background: "#080808", zIndex: 9999,
-        display: "flex", flexDirection: "column", overflowY: "auto", overflowX: "hidden",
+        width: "100%", maxWidth: 480, background: C.bg, zIndex: 9999,
+        display: "flex", flexDirection: "column", overflow: "hidden",
         boxShadow: "0 0 0 100vmax rgba(0,0,0,0.55)",
       }}>
       {/* HEADER */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "16px 18px", borderBottom: "1px solid #1a1a1a",
-        background: "#0a0a0a", flexShrink: 0,
+        padding: "16px 18px", borderBottom: `1px solid ${C.border}`,
+        background: C.nav, flexShrink: 0,
       }}>
         <button onClick={onTutup} style={{
-          background: "#1a1a1a", border: "none", borderRadius: 8, padding: "6px 12px",
-          color: "#888", fontSize: 13, cursor: "pointer",
+          background: C.tutupBg, border: "none", borderRadius: 8, padding: "6px 12px",
+          color: C.tutupTx, fontSize: 13, cursor: "pointer",
         }}>✕ Tutup</button>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#f5c842" }}>{judul}</div>
-        <div style={{ fontSize: 13, color: "#555" }}>{idx + 1}/{data.length}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: aksen }}>{judul}</div>
+        <div style={{ fontSize: 13, color: C.sub }}>{idx + 1}/{data.length}</div>
       </div>
 
       {/* DOTS PROGRESS */}
       <div style={{
         display: "flex", gap: 5, padding: "10px 18px", overflowX: "auto", flexShrink: 0,
-        scrollbarWidth: "none",
+        scrollbarWidth: "none", background: C.nav,
       }}>
         {data.map((d, i) => (
           <button key={d.no} onClick={() => setIdx(i)} style={{
             width: selesai.includes(d.no) ? 12 : (i === idx ? 14 : 8),
             height: selesai.includes(d.no) ? 12 : (i === idx ? 14 : 8),
             borderRadius: "50%", flexShrink: 0, border: "none", cursor: "pointer",
-            background: selesai.includes(d.no) ? "#34c776" : i === idx ? "#f5c842" : "#2a2a2a",
+            background: selesai.includes(d.no) ? "#34c776" : i === idx ? aksen : (isTerang ? "#d8d3c8" : "#2a2a2a"),
             transition: "all .2s",
           }} />
         ))}
       </div>
 
-      {/* KARTU UTAMA */}
-      <div style={{ flex: 1, padding: "16px 18px 20px", display: "flex", flexDirection: "column", gap: 16,
-        transform: `translateX(${dragX}px)`,
-        opacity: dragging && Math.abs(dragX) > 0 ? Math.max(0.45, 1 - Math.abs(dragX) / 380) : 1,
-        transition: dragging ? "none" : "transform .2s ease, opacity .2s ease",
-        touchAction: "pan-y" }}>
-        {/* Nama dzikir */}
-        <div style={{ textAlign: "center" }}>
-          <span style={{
-            background: isSelesai ? "#0a2a00" : "#1a1400",
-            border: `1px solid ${isSelesai ? "#34c776" : "#3a2800"}`,
-            borderRadius: 20, padding: "4px 14px", fontSize: 12,
-            color: isSelesai ? "#34c776" : "#f5c842", fontWeight: 700,
-          }}>
-            {isSelesai ? "✅ Selesai" : `${item.no}. ${item.nama}`}
-          </span>
-        </div>
-
-        {/* Arabic */}
+      {/* CAROUSEL TRACK (peek before/after) */}
+      <div
+        ref={el=>{ if (el && el.clientWidth && el.clientWidth !== wd) setWd(el.clientWidth); }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{ flex: 1, overflow: "hidden", position: "relative" }}>
         <div style={{
-          background: "#0e0e0e", border: "1px solid #2a2000", borderRadius: 14,
-          padding: "20px 18px", textAlign: "right",
+          display: "flex", height: "100%",
+          transform: `translateX(${trackX}px)`,
+          transition: dragging ? "none" : "transform .28s cubic-bezier(.22,.61,.36,1)",
+          touchAction: "pan-y",
         }}>
-          <div style={{
-            fontFamily: "'Amiri', 'Arial', serif", fontSize: 26, lineHeight: 2.2,
-            color: "#f5e9c4", direction: "rtl", wordBreak: "break-word",
-          }}>
-            {item.arab}
-          </div>
-        </div>
-
-        {/* Latin */}
-        <div style={{
-          fontSize: 13, color: "#b8a87a", lineHeight: 1.9,
-          fontStyle: "italic", textAlign: "center",
-        }}>
-          {item.latin}
-        </div>
-
-        {/* Terjemah */}
-        <div style={{
-          background: "#0c0c0c", borderRadius: 12, padding: "14px 16px",
-          fontSize: 13, color: "#ccc", lineHeight: 1.8,
-        }}>
-          {item.terjemah}
-        </div>
-
-        {/* Faedah */}
-        {item.faedah ? (
-          <div style={{
-            background: "#0e0e1a", border: "1px solid #1a1a3a", borderRadius: 12,
-            padding: "12px 14px", fontSize: 12, color: "#9999cc", lineHeight: 1.7,
-          }}>
-            📖 {item.faedah}
-          </div>
-        ) : null}
-
-        {/* COUNTER / TAP */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-          {item.dibaca > 1 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{
-                fontSize: 32, fontWeight: 900,
-                color: isSelesai ? "#34c776" : "#f5c842", fontFamily: "monospace",
+          {data.map((it, i) => {
+            const isSel = selesai.includes(it.no);
+            const cnt   = counter[it.no] || 0;
+            const aktif = i === idx;
+            return (
+              <div key={it.no} style={{
+                width: slideW, flex: "0 0 auto", padding: "10px 7px 16px", boxSizing: "border-box",
+                opacity: aktif ? 1 : 0.45, transform: aktif ? "scale(1)" : "scale(0.96)",
+                transition: "opacity .25s ease, transform .25s ease",
               }}>
-                {count}
-              </div>
-              <div style={{ fontSize: 16, color: "#444" }}>/</div>
-              <div style={{ fontSize: 22, color: "#555", fontFamily: "monospace" }}>
-                {item.dibaca}×
-              </div>
-            </div>
-          )}
+                <div style={{
+                  background: C.kartu, border: `1px solid ${C.kartuBr}`, borderRadius: 18,
+                  padding: "16px 14px", height: "100%", boxSizing: "border-box",
+                  display: "flex", flexDirection: "column", gap: 14, overflowY: "auto",
+                }}>
+                  {/* Nama */}
+                  <div style={{ textAlign: "center" }}>
+                    <span style={{
+                      background: isSel ? (isTerang ? "#e3f6e0" : "#0a2a00") : C.badgeBg,
+                      border: `1px solid ${isSel ? "#34c776" : C.badgeBr}`,
+                      borderRadius: 20, padding: "4px 14px", fontSize: 12,
+                      color: isSel ? "#34c776" : aksen, fontWeight: 700,
+                    }}>
+                      {isSel ? "✅ Selesai" : `${it.no}. ${it.nama}`}
+                    </span>
+                  </div>
 
-          {/* Tombol TAP */}
-          {!isSelesai ? (
-            <button onPointerDown={tap} style={{
-              background: "#f5c842", color: "#000", fontWeight: 900,
-              fontSize: 16, border: "none", borderRadius: 60,
-              padding: item.dibaca === 1 ? "14px 56px" : "14px 44px",
-              cursor: "pointer", userSelect: "none", WebkitUserSelect: "none",
-              boxShadow: "0 4px 20px #f5c84255",
-              transition: "transform .08s",
-            }}>
-              {item.dibaca === 1 ? "Selesai Dibaca ✓" : "TAP"}
-            </button>
-          ) : (
-            <div style={{ fontSize: 22, color: "#34c776", fontWeight: 900 }}>✅ Selesai</div>
-          )}
+                  {/* Arabic */}
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{
+                      fontFamily: "'Amiri', 'Arial', serif", fontSize: 26, lineHeight: 2.2,
+                      color: C.arab, direction: "rtl", wordBreak: "break-word",
+                    }}>
+                      {it.arab}
+                    </div>
+                  </div>
+
+                  {/* Latin */}
+                  <div style={{ fontSize: 13, color: C.latin, lineHeight: 1.9, fontStyle: "italic", textAlign: "center" }}>
+                    {it.latin}
+                  </div>
+
+                  {/* Terjemah */}
+                  <div style={{ background: C.terjBg, borderRadius: 12, padding: "14px 16px", fontSize: 13, color: C.terj, lineHeight: 1.8 }}>
+                    {it.terjemah}
+                  </div>
+
+                  {/* Faedah */}
+                  {it.faedah ? (
+                    <div style={{ background: C.faeBg, border: `1px solid ${C.faeBr}`, borderRadius: 12, padding: "12px 14px", fontSize: 12, color: C.fae, lineHeight: 1.7 }}>
+                      📖 {it.faedah}
+                    </div>
+                  ) : null}
+
+                  {/* COUNTER / TAP */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: "auto", paddingTop: 6 }}>
+                    {it.dibaca > 1 && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ fontSize: 32, fontWeight: 900, color: isSel ? "#34c776" : aksen, fontFamily: "monospace" }}>{cnt}</div>
+                        <div style={{ fontSize: 16, color: C.sub }}>/</div>
+                        <div style={{ fontSize: 22, color: C.sub, fontFamily: "monospace" }}>{it.dibaca}×</div>
+                      </div>
+                    )}
+                    {!isSel ? (
+                      <button onClick={() => aktif && tapItem(it)} style={{
+                        background: aksen, color: "#000", fontWeight: 900, fontSize: 16,
+                        border: "none", borderRadius: 60, padding: it.dibaca === 1 ? "14px 56px" : "14px 44px",
+                        cursor: "pointer", userSelect: "none", WebkitUserSelect: "none",
+                        boxShadow: "0 4px 20px #f5c84255", transition: "transform .08s",
+                      }}>
+                        {it.dibaca === 1 ? "Selesai Dibaca ✓" : "TAP"}
+                      </button>
+                    ) : (
+                      <div style={{ fontSize: 22, color: "#34c776", fontWeight: 900 }}>✅ Selesai</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       {/* NAVIGASI PREV / NEXT */}
       <div style={{
         display: "flex", gap: 12, padding: "14px 18px 28px",
-        borderTop: "1px solid #141414", flexShrink: 0, background: "#0a0a0a",
+        borderTop: `1px solid ${C.border}`, flexShrink: 0, background: C.nav,
       }}>
         <button onClick={prev} disabled={idx === 0} style={{
           flex: 1, padding: "12px 0", borderRadius: 10, border: "none",
-          background: idx === 0 ? "#111" : "#1e1e1e", color: idx === 0 ? "#333" : "#bbb",
+          background: idx === 0 ? C.navOff : C.navBtn, color: idx === 0 ? C.navOffTx : C.navBtnTx,
           fontSize: 14, fontWeight: 700, cursor: idx === 0 ? "not-allowed" : "pointer",
         }}>← Sebelumnya</button>
         <button onClick={next} disabled={idx === data.length - 1} style={{
           flex: 1, padding: "12px 0", borderRadius: 10, border: "none",
-          background: idx === data.length - 1 ? "#111" : "#1e1e1e",
-          color: idx === data.length - 1 ? "#333" : "#f5c842",
+          background: idx === data.length - 1 ? C.navOff : C.navBtn,
+          color: idx === data.length - 1 ? C.navOffTx : aksen,
           fontSize: 14, fontWeight: 700, cursor: idx === data.length - 1 ? "not-allowed" : "pointer",
         }}>Berikutnya →</button>
       </div>
@@ -2030,7 +2045,7 @@ function ModeBacaDzikir({ data, judul, onTutup }) {
 
 // ═══════════════════════ HALAMAN DZIKIR ══════════════════════════════════════
 
-function HalamanDzikir({ catatan, onBukaCatatan, simpanCatatan }) {
+function HalamanDzikir({ catatan, onBukaCatatan, simpanCatatan, t, tema }) {
   const jam = new Date().getHours();
   const waktupagi   = jam >= 4  && jam < 12;
   const waktupetang = jam >= 15 && jam <= 18;
@@ -2086,7 +2101,7 @@ function HalamanDzikir({ catatan, onBukaCatatan, simpanCatatan }) {
     d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 
   if (modeBaca) return (
-    <ModeBacaDzikir data={modeBaca.data} judul={modeBaca.judul} onTutup={() => setModeBaca(null)} />
+    <ModeBacaDzikir data={modeBaca.data} judul={modeBaca.judul} onTutup={() => setModeBaca(null)} t={t} tema={tema} />
   );
 
   return (
@@ -2529,7 +2544,14 @@ function WelcomeScreen({ onBuatCatatan, onTemplate, onDzikir, isTerang, t, tema 
     <div style={{ padding:"32px 24px", background:t.bg, minHeight:"70vh" }}>
       {/* ATAS */}
       <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:16 }}>
-        <div style={{ fontSize:64 }}>📝</div>
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-label="KapurPad">
+          <g transform="rotate(-38 32 32)">
+            <rect x="23" y="12" width="18" height="40" rx="6" fill="#f4f1e8"/>
+            <rect x="23" y="12" width="18" height="11" rx="6" fill={tema.aksen}/>
+            <rect x="23" y="44" width="18" height="8" rx="4" fill="#d6d0c4"/>
+          </g>
+          <path d="M9 53 q14 -7 33 -3" stroke="#cfc9bd" strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.75"/>
+        </svg>
         <div style={{ textAlign:"center" }}>
           <div style={{ fontSize:15, color:t.subteks }}>Selamat datang di</div>
           <div style={{ fontSize:32, fontWeight:900, fontFamily:"Georgia,serif", letterSpacing:-1 }}>
@@ -2933,7 +2955,7 @@ export default function App() {
         )}
 
         {tampilan==="kalender" && <TampilKalender catatan={catatan} onBukaCatatan={c=>setEditCatatan(c)} onTambahDiTanggal={ts=>tambahDiTanggal(ts,false)} onSetPengingatTanggal={ts=>tambahDiTanggal(ts,true)} t={t} tema={tema}/>}
-        {tampilan==="dzikir"   && <HalamanDzikir catatan={catatan} onBukaCatatan={c=>setEditCatatan(c)} simpanCatatan={simpanCatatan}/>}
+        {tampilan==="dzikir"   && <HalamanDzikir catatan={catatan} onBukaCatatan={c=>setEditCatatan(c)} simpanCatatan={simpanCatatan} t={t} tema={tema}/>}
         {tampilan==="tanyaai"  && <HalamanTanyaAI catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
         {tampilan==="laporan"  && <HalamanLaporan catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
 
