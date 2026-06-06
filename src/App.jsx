@@ -328,9 +328,10 @@ const cekStatusPro = () => {
 };
 
 const aktifkanPro = (plan) => {
-  const durasi = plan === "tahunan"
-    ? 365 * 24 * 60 * 60 * 1000
-    : 30  * 24 * 60 * 60 * 1000;
+  let durasi;
+  if (plan === "owner")        durasi = 100 * 365 * 24 * 60 * 60 * 1000;
+  else if (plan === "tahunan") durasi = 365 * 24 * 60 * 60 * 1000;
+  else                         durasi = 30  * 24 * 60 * 60 * 1000;
   localStorage.setItem(PRO_KEY, "true");
   localStorage.setItem(PRO_EXPIRY_KEY, String(Date.now() + durasi));
 };
@@ -425,8 +426,31 @@ function GatePro({ pesan, onUpgrade, onTutup }) {
         }}>
           Upgrade Pro — Rp 99.000/tahun
         </button>
-        <div style={{fontSize:11,color:"#555",marginBottom:16}}>Coba gratis 7 hari · Batalkan kapan saja</div>
+        <div style={{fontSize:11,color:"#555",marginBottom:16}}>Pembayaran aman via Midtrans · QRIS, GoPay, Transfer Bank</div>
         <button onClick={onTutup} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:13}}>
+          Nanti saja
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Modal penjelasan ramah sebelum minta izin notifikasi
+function ModalIzinNotif({ onIzinkan, onNanti }) {
+  return (
+    <div style={{position:"fixed",inset:0,background:"#000c",zIndex:850,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{background:"#fff",borderRadius:20,padding:26,maxWidth:340,width:"100%",textAlign:"center"}}>
+        <div style={{fontSize:44,marginBottom:10}}>🔔</div>
+        <div style={{fontSize:18,fontWeight:800,color:"#1a1a1a",marginBottom:10}}>Izinkan KapurPad mengingatkanmu?</div>
+        <div style={{fontSize:13,color:"#666",lineHeight:1.7,marginBottom:22}}>
+          Kami hanya kirim notifikasi untuk pengingat yang <b>kamu buat sendiri</b>.
+          Tidak ada spam, tidak ada iklan.
+        </div>
+        <button onClick={onIzinkan} style={{
+          width:"100%",padding:"13px 0",background:"#28c0b6",border:"none",borderRadius:12,
+          color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:10,
+        }}>Izinkan</button>
+        <button onClick={onNanti} style={{background:"none",border:"none",color:"#999",cursor:"pointer",fontSize:13}}>
           Nanti saja
         </button>
       </div>
@@ -754,10 +778,22 @@ function ModalPin({ mode, pinSimpan, onSukses, onBatal }) {
 
 // ═══════════════════════ PENGATURAN ══════════════════════════════════════════
 
-function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePro }) {
+function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePro, onOwnerAktif }) {
   const [konfirmHapus, setKonfirmHapus] = useState(false);
   const [pinMode, setPinMode] = useState(null); // "buat" | "hapus"
   const [notifStatus, setNotifStatus] = useState(Notification?.permission||"default");
+  const [tapCount, setTapCount] = useState(0);
+  const tapTimer = useRef(null);
+
+  const tapVersi = () => {
+    setTapCount(c => {
+      const baru = c + 1;
+      if (baru >= 7) { onOwnerAktif?.(); return 0; }
+      return baru;
+    });
+    clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => setTapCount(0), 3000);
+  };
 
   const mintaNotif = async () => {
     const ok = await mintaIzinNotif();
@@ -924,7 +960,7 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
         {/* Tentang */}
         <Seksi judul="TENTANG">
           <div style={{padding:"10px 0", color:"#555", fontSize:13, lineHeight:1.8}}>
-            <div>📱 <strong style={{color:"#888"}}>KapurPad</strong> versi 1.0.0</div>
+            <div onClick={tapVersi} style={{cursor:"pointer",userSelect:"none"}}>📱 <strong style={{color:"#888"}}>KapurPad</strong> versi 1.0.0{tapCount>0&&tapCount<7?` · ${7-tapCount}`:""}</div>
             <div>📦 Catatan tersimpan: {catatan.filter(n=>!n.hapus).length}</div>
             <div>💾 Data tersimpan lokal di perangkat kamu</div>
             <div style={{marginTop:8,fontSize:11}}>© 2026 KapurPad · Semua hak dilindungi</div>
@@ -1019,9 +1055,7 @@ function ModalPremium({ onTutup, onProAktif }) {
     }
   };
 
-  const infoTagih = planDipilih === "tahunan"
-    ? "Rp 99.000 ditagihkan tiap tahun · Batalkan kapan saja"
-    : "Rp 24.000 ditagihkan tiap bulan · Batalkan kapan saja";
+  const infoTagih = "Pembayaran aman via Midtrans · QRIS, GoPay, Transfer Bank";
 
   return (
     <div style={{position:"fixed",inset:0,background:"#000e",zIndex:500,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onTutup}>
@@ -1053,7 +1087,7 @@ function ModalPremium({ onTutup, onProAktif }) {
         </div>
         <button onClick={handleBayar} disabled={loading}
           style={{width:"100%",padding:14,background:loading?"#5a4800":"linear-gradient(135deg,#f5c842,#e8a030)",border:"none",borderRadius:12,color:"#000",fontWeight:800,fontSize:16,cursor:loading?"not-allowed":"pointer",marginBottom:8,opacity:loading?0.7:1,transition:"all .2s"}}>
-          {loading ? "Memproses…" : "Coba Gratis 7 Hari"}
+          {loading ? "Memproses…" : "Beli Pro Sekarang"}
         </button>
         {pesanError && (
           <div style={{textAlign:"center",fontSize:12,color:"#e84040",marginBottom:8,padding:"6px 12px",background:"#1a0000",borderRadius:8,border:"1px solid #3a0000"}}>
@@ -1222,6 +1256,7 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
   const [warnaBuka,   setWarnaBuka]   = useState(false);
   const [moodBuka,    setMoodBuka]    = useState(false);
   const [ingatBuka,   setIngatBuka]   = useState(false);
+  const [mintaIzin,   setMintaIzin]   = useState(false);
   const [modeFokus,   setModeFokus]   = useState(false);
   const [notif,       setNotif]       = useState(null);
   const dragIdx   = useRef(null);
@@ -1369,10 +1404,21 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
             {pengingat && <div style={{fontSize:11,color:"#666",marginBottom:12}}>📅 {formatTanggalLengkap(new Date(pengingat).getTime())}</div>}
             <div style={{display:"flex",gap:10}}>
               <button onClick={()=>{setPengingat("");setIngatBuka(false);}} style={{flex:1,padding:10,background:"#2a2a2a",border:"none",borderRadius:8,color:"#888",cursor:"pointer"}}>Hapus</button>
-              <button onClick={()=>{setIngatBuka(false);tampilNotif("🔔 Pengingat disimpan!");}} style={{flex:1,padding:10,background:warna.aksen,border:"none",borderRadius:8,color:"#000",fontWeight:700,cursor:"pointer"}}>Simpan</button>
+              <button onClick={()=>{
+                setIngatBuka(false);
+                tampilNotif("🔔 Pengingat disimpan!");
+                if (pengingat && "Notification" in window && Notification.permission==="default") setMintaIzin(true);
+              }} style={{flex:1,padding:10,background:warna.aksen,border:"none",borderRadius:8,color:"#000",fontWeight:700,cursor:"pointer"}}>Simpan</button>
             </div>
           </div>
         </div>
+      )}
+
+      {mintaIzin && (
+        <ModalIzinNotif
+          onIzinkan={async()=>{ await mintaIzinNotif(); setMintaIzin(false); }}
+          onNanti={()=>setMintaIzin(false)}
+        />
       )}
 
       {/* MODE FOKUS */}
@@ -1572,8 +1618,20 @@ function ModeBacaDzikir({ data, judul, onTutup }) {
     }
   };
 
-  const prev = () => idx > 0 && setIdx(i => i - 1);
-  const next = () => idx < data.length - 1 && setIdx(i => i + 1);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd]     = useState(0);
+  const [slide, setSlide]           = useState(0);
+
+  const prev = () => { if (idx > 0) { setSlide(1);  setTimeout(()=>{ setIdx(i=>i-1); setSlide(0); }, 130); } };
+  const next = () => { if (idx < data.length - 1) { setSlide(-1); setTimeout(()=>{ setIdx(i=>i+1); setSlide(0); }, 130); } };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const jarak = touchStart - touchEnd;
+    if (jarak > 50)  next();   // swipe kiri → berikutnya
+    if (jarak < -50) prev();   // swipe kanan → sebelumnya
+    setTouchStart(0); setTouchEnd(0);
+  };
 
   // Layar selesai semua
   if (semua) return (
@@ -1595,10 +1653,14 @@ function ModeBacaDzikir({ data, judul, onTutup }) {
   );
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, background: "#080808", zIndex: 9999,
-      display: "flex", flexDirection: "column", overflowY: "auto",
-    }}>
+    <div
+      onTouchStart={(e)=>setTouchStart(e.targetTouches[0].clientX)}
+      onTouchMove={(e)=>setTouchEnd(e.targetTouches[0].clientX)}
+      onTouchEnd={onTouchEnd}
+      style={{
+        position: "fixed", inset: 0, background: "#080808", zIndex: 9999,
+        display: "flex", flexDirection: "column", overflowY: "auto",
+      }}>
       {/* HEADER */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -1630,7 +1692,9 @@ function ModeBacaDzikir({ data, judul, onTutup }) {
       </div>
 
       {/* KARTU UTAMA */}
-      <div style={{ flex: 1, padding: "16px 18px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ flex: 1, padding: "16px 18px 20px", display: "flex", flexDirection: "column", gap: 16,
+        transform: `translateX(${slide * 60}px)`, opacity: slide === 0 ? 1 : 0.3,
+        transition: "transform .13s ease, opacity .13s ease" }}>
         {/* Nama dzikir */}
         <div style={{ textAlign: "center" }}>
           <span style={{
@@ -1749,6 +1813,7 @@ function HalamanDzikir({ catatan, onBukaCatatan, simpanCatatan }) {
   );
   const [jamSekarang, setJamSekarang] = useState(new Date());
   const [modeBaca, setModeBaca]       = useState(null); // { data, judul }
+  const [mintaIzin, setMintaIzin]     = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setJamSekarang(new Date()), 60000);
@@ -1763,15 +1828,24 @@ function HalamanDzikir({ catatan, onBukaCatatan, simpanCatatan }) {
     /dzikir/i.test(n.judul || "")
   );
 
-  const toggleNotif = async () => {
-    if (!notifDzikir) {
-      const ok = await mintaIzinNotif();
-      if (!ok) { alert("Izin notifikasi ditolak. Aktifkan di pengaturan browser."); return; }
+  const aktifkanDzikir = () => {
+    localStorage.setItem(NOTIF_DZIKIR_KEY, "true");
+    setNotifDzikir(true);
+    jadwalkanNotifDzikir();
+  };
+
+  const toggleNotif = () => {
+    if (notifDzikir) {
+      // Matikan
+      localStorage.setItem(NOTIF_DZIKIR_KEY, "false");
+      setNotifDzikir(false);
+      return;
     }
-    const baru = !notifDzikir;
-    localStorage.setItem(NOTIF_DZIKIR_KEY, baru ? "true" : "false");
-    setNotifDzikir(baru);
-    if (baru) jadwalkanNotifDzikir();
+    // Nyalakan — minta izin dengan ramah dulu
+    if (!("Notification" in window)) { alert("Browser tidak mendukung notifikasi."); return; }
+    if (Notification.permission === "granted") { aktifkanDzikir(); return; }
+    if (Notification.permission === "denied") { alert("Izin notifikasi diblokir. Aktifkan di pengaturan browser."); return; }
+    setMintaIzin(true);
   };
 
   const statusWaktu = waktupagi
@@ -1791,6 +1865,12 @@ function HalamanDzikir({ catatan, onBukaCatatan, simpanCatatan }) {
 
   return (
     <div style={{ paddingBottom: 90 }}>
+      {mintaIzin && (
+        <ModalIzinNotif
+          onIzinkan={async()=>{ const ok=await mintaIzinNotif(); setMintaIzin(false); if(ok) aktifkanDzikir(); }}
+          onNanti={()=>setMintaIzin(false)}
+        />
+      )}
       {/* HEADER */}
       <div style={{ background: "#0e0e0e", borderBottom: "1px solid #1a1a1a", padding: "20px 18px 16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -2087,7 +2167,8 @@ export default function App() {
 
   // ── PENGATURAN ──
   if (showSettings) return (
-    <HalamanPengaturan settings={settings} onUbah={setSettings} onTutup={()=>setShowSettings(false)} catatan={catatan} isPro={isPro} onGatePro={bukaGatePro}/>
+    <HalamanPengaturan settings={settings} onUbah={setSettings} onTutup={()=>setShowSettings(false)} catatan={catatan} isPro={isPro} onGatePro={bukaGatePro}
+      onOwnerAktif={()=>{ aktifkanPro("owner"); setIsPro(true); tampilNotif("🔓 Mode Owner aktif — Pro unlimited"); }}/>
   );
 
   // ── EDITOR ──
