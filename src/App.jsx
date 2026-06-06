@@ -3,14 +3,14 @@ import { useState, useRef, useEffect, useCallback } from "react";
 // ═══════════════════════ KONSTANTA ═══════════════════════════════════════════
 
 const WARNA = [
-  { nama:"emas",   bg:"#181400", garis:"#7a6500", aksen:"#f5c842" },
-  { nama:"zamrud", bg:"#001208", garis:"#0d5c2a", aksen:"#34c776" },
-  { nama:"langit", bg:"#000d1a", garis:"#0d3a6e", aksen:"#3d9de8" },
-  { nama:"bara",   bg:"#1a0000", garis:"#6e1010", aksen:"#e84040" },
-  { nama:"ungu",   bg:"#0e0016", garis:"#4a0f7a", aksen:"#9b59e8" },
-  { nama:"senja",  bg:"#1a0900", garis:"#7a3800", aksen:"#e88530" },
-  { nama:"toska",  bg:"#00191a", garis:"#0c5e60", aksen:"#30d8dc" },
-  { nama:"mawar",  bg:"#1a0018", garis:"#6e1060", aksen:"#e840b0" },
+  { nama:"emas",   bg:"#181400", garis:"#7a6500", aksen:"#f5c842", kertasLight:"#fdf9ec", kertasDark:"#16140a" },
+  { nama:"zamrud", bg:"#001208", garis:"#0d5c2a", aksen:"#34c776", kertasLight:"#eef9f0", kertasDark:"#0a140d" },
+  { nama:"langit", bg:"#000d1a", garis:"#0d3a6e", aksen:"#3d9de8", kertasLight:"#eef4fc", kertasDark:"#0a0e16" },
+  { nama:"bara",   bg:"#1a0000", garis:"#6e1010", aksen:"#e84040", kertasLight:"#fcefef", kertasDark:"#160a0a" },
+  { nama:"ungu",   bg:"#0e0016", garis:"#4a0f7a", aksen:"#9b59e8", kertasLight:"#f6eefc", kertasDark:"#100a16" },
+  { nama:"senja",  bg:"#1a0900", garis:"#7a3800", aksen:"#e88530", kertasLight:"#fcf3ec", kertasDark:"#16100a" },
+  { nama:"toska",  bg:"#00191a", garis:"#0c5e60", aksen:"#30d8dc", kertasLight:"#eafaf9", kertasDark:"#0a1514" },
+  { nama:"mawar",  bg:"#1a0018", garis:"#6e1060", aksen:"#e840b0", kertasLight:"#fcedf6", kertasDark:"#160a12" },
 ];
 const W0 = WARNA[0];
 
@@ -595,12 +595,13 @@ function PilihMood({ aktif, onChange }) {
 function KartuCatatan({ c, onClick, q, tema, t }) {
   const w = c.warna || W0;
   const terang = !!t && t.kartu === "#ffffff";
-  const cardBg   = terang ? "#ffffff" : w.bg;
-  const cardGaris= terang ? "rgba(0,0,0,0.09)" : w.garis;
+  // Background kartu pakai kertas lembut sesuai warna catatan (konsisten dgn EditorCatatan)
+  const cardBg   = terang ? (w.kertasLight || "#ffffff") : (w.kertasDark || w.bg);
+  const cardGaris= terang ? "rgba(0,0,0,0.09)" : (w.garis || "#202020");
   const judulCol = terang ? "#1a1a1a" : "#ece8e0";
-  const isiCol   = terang ? "#666666" : "#666";
-  const metaCol  = terang ? "#999999" : "#444";
-  const barBg    = terang ? "#eceae4" : "#1e1e1e";
+  const isiCol   = terang ? "#555555" : "#a8a39a";
+  const metaCol  = terang ? "#8a8478" : "#777";
+  const barBg    = terang ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.08)";
   const sorot = (teks) => {
     if (!q||!teks) return teks;
     const i = teks.toLowerCase().indexOf(q.toLowerCase());
@@ -1396,18 +1397,20 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
   const timerRef  = useRef(null);
   const audioCtxRef = useRef(null);
   const editorRef = useRef(null);   // contentEditable WYSIWYG
+  const aiBtnRef  = useRef(null);   // anchor untuk dropdown menu AI
   const [tapAnim, setTapAnim] = useState(null);
 
-  // Warna dinamis berdasarkan tema
-  const edBg    = isTerang ? "#f8f5f0" : "#080808";
-  const edNav   = isTerang ? "#ffffff" : warna.bg;
-  const edBorder= isTerang ? "rgba(0,0,0,0.09)" : warna.garis;
+  // Warna kertas kerja mengikuti warna catatan yang dipilih
+  const edKertas = isTerang ? (warna.kertasLight || "#f8f5f0") : (warna.kertasDark || "#080808");
+  const edBg    = edKertas;                                  // area tulis = kertas berwarna
+  const edNav   = edKertas;                                  // header/toolbar/bottom senada
+  const edBorder= isTerang ? "rgba(0,0,0,0.08)" : warna.garis;
   const edTeks  = isTerang ? "#1a1a1a" : "#ece8e0";
-  const edMuted = isTerang ? "#999" : "#555";
-  const edInput = isTerang ? "#f0ede8" : "none";
+  const edMuted = isTerang ? "#9a948a" : "#666";
+  const edInput = isTerang ? "#ffffffcc" : "none";
   const edSubTeks=isTerang ? "#666" : "#888";
-  const edItemColor= isTerang ? "#333" : "#ccc";
-  const edWordCount= isTerang ? "#aaa" : "#333";
+  const edItemColor= isTerang ? "#1a1a1a" : "#ece8e0";       // teks kontras di atas kertas
+  const edWordCount= isTerang ? "#b0a99c" : "#555";
 
   const tampilNotif = (p) => { setNotif(p); setTimeout(()=>setNotif(null),2200); };
 
@@ -1718,7 +1721,7 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
 
       {/* MARKDOWN TOOLBAR + AI BUTTON (hanya teks, bukan ceklis) */}
       {tipe==="teks" && !modeFokus && (
-        <div style={{display:"flex",gap:4,padding:"6px 12px",background:isTerang?"#ebe8e3":"#101010",borderBottom:`1px solid ${edBorder}`,overflowX:"auto",scrollbarWidth:"none",alignItems:"center",flexShrink:0}}>
+        <div style={{display:"flex",gap:4,padding:"6px 12px",background:edNav,borderBottom:`1px solid ${edBorder}`,overflowX:"auto",scrollbarWidth:"none",alignItems:"center",flexShrink:0}}>
           {[
             {lab:"B",  title:"Tebal",     fn:()=>format("bold")},
             {lab:"I",  title:"Miring",    fn:()=>format("italic")},
@@ -1741,8 +1744,8 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
             <span style={{fontSize:10,color:"#f5c842",marginLeft:4,flexShrink:0}}>🔒 Pro</span>
           )}
           {/* AI Button */}
-          <div style={{marginLeft:8,position:"relative",flexShrink:0}}>
-            <button onClick={()=>{
+          <div style={{marginLeft:8,flexShrink:0}}>
+            <button ref={aiBtnRef} onClick={()=>{
               if(!isPro){onGatePro?.("Asisten AI Nulis tersedia untuk pengguna Pro ✨");return;}
               setAiMenu(!aiMenu);
             }} style={{
@@ -1753,21 +1756,31 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
             }}>
               {aiLoading?"⏳":"✨"} AI
             </button>
-            {aiMenu && (
-              <div style={{position:"absolute",top:30,right:0,background:isTerang?"#ffffff":"#1c1c1c",border:`1px solid ${isTerang?"#e2ded6":"#2e2e2e"}`,borderRadius:10,zIndex:300,minWidth:200,overflow:"hidden",boxShadow:"0 6px 20px #0003"}}>
-                <button onClick={()=>{setAiMenu(false);panggilAI("rapikan",isi);}}
-                  style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 14px",background:"none",border:"none",color:isTerang?"#333":"#ddd",cursor:"pointer",fontSize:13,textAlign:"left"}}>
-                  ✏️ Rapikan tulisan saya
-                </button>
-                <button onClick={()=>{setAiMenu(false);setAiMode("buatDari");}}
-                  style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 14px",background:"none",border:"none",borderTop:`1px solid ${isTerang?"#eee":"#222"}`,color:isTerang?"#333":"#ddd",cursor:"pointer",fontSize:13,textAlign:"left"}}>
-                  📝 Buat catatan dari perintah
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}
+
+      {/* DROPDOWN MENU AI — mengambang (fixed) agar tidak terpotong toolbar & tidak menggeser konten */}
+      {aiMenu && (() => {
+        const r = aiBtnRef.current?.getBoundingClientRect();
+        const top   = (r ? r.bottom : 90) + 4;
+        const right = r ? Math.max(8, window.innerWidth - r.right) : 12;
+        return (
+          <>
+            <div onClick={()=>setAiMenu(false)} style={{position:"fixed",inset:0,zIndex:399}}/>
+            <div style={{position:"fixed",top,right,background:isTerang?"#ffffff":"#1c1c1c",border:`1px solid ${isTerang?"#e2ded6":"#2e2e2e"}`,borderRadius:10,zIndex:400,minWidth:210,overflow:"hidden",boxShadow:"0 8px 24px rgba(0,0,0,0.28)"}}>
+              <button onClick={()=>{setAiMenu(false);panggilAI("rapikan",isi);}}
+                style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 16px",background:"none",border:"none",color:isTerang?"#333":"#ddd",cursor:"pointer",fontSize:14,textAlign:"left"}}>
+                ✏️ Rapikan tulisan saya
+              </button>
+              <button onClick={()=>{setAiMenu(false);setAiMode("buatDari");}}
+                style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:"12px 16px",background:"none",border:"none",borderTop:`1px solid ${isTerang?"#eee":"#222"}`,color:isTerang?"#333":"#ddd",cursor:"pointer",fontSize:14,textAlign:"left"}}>
+                📝 Buat catatan dari perintah
+              </button>
+            </div>
+          </>
+        );
+      })()}
 
       {/* AREA TULIS */}
       {!modeFokus && (
