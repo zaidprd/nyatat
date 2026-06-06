@@ -88,6 +88,7 @@ const TEMA = [
   { id:"hijau",   nama:"Hutan",    bg:"#061008", nav:"#0a160a", aksen:"#34c776" },
   { id:"biru",    nama:"Laut",     bg:"#060810", nav:"#0a0e18", aksen:"#3d9de8" },
   { id:"coklat",  nama:"Kopi",     bg:"#100a04", nav:"#160e06", aksen:"#e88530" },
+  { id:"terang",  nama:"Terang",   bg:"#f0ede8", nav:"#ffffff", aksen:"#28c0b6" },
 ];
 
 const STORAGE_KEY   = "nyatet_v3";
@@ -292,12 +293,8 @@ const muatCatatan = () => {
     const d = localStorage.getItem(STORAGE_KEY);
     if (d) return JSON.parse(d);
   } catch {}
-  return [
-    { id:"n1",tipe:"teks",  judul:"Obat Alergi",         isi:"Asam mefenamat dan sodium diclofenac",mood:"sehat",  warna:WARNA[0],dibuat:Date.now()-8.64e7*2, diubah:Date.now()-8.64e7*2, pin:true, arsip:false,hapus:false,kunci:false,pengingat:null },
-    { id:"n2",tipe:"teks",  judul:"Catatan Kajian Kitab", isi:"Kitab al Ishobah — Ustadz Mufy Hanif Thalib, Lc\n\nCatatan penting dari kajian rutin.",mood:"ibadah",warna:WARNA[1],dibuat:Date.now()-8.64e7*5, diubah:Date.now()-8.64e7*5, pin:false,arsip:false,hapus:false,kunci:false,pengingat:null },
-    { id:"n3",tipe:"ceklis",judul:"Cicilan Ke Bibi",      isi:"",item:[{id:"c1",teks:"Cicilan pertama Rp 500rb",cek:true},{id:"c2",teks:"Cicilan kedua Rp 500rb",cek:false},{id:"c3",teks:"Konfirmasi lunas",cek:false}],mood:"uang",warna:WARNA[2],dibuat:Date.now()-8.64e7*5, diubah:Date.now()-8.64e7*5, pin:false,arsip:false,hapus:false,kunci:false,pengingat:null },
-    { id:"n4",tipe:"ceklis",judul:"Rencana Hari Ini",     isi:"",item:[{id:"d1",teks:"Sholat Subuh",cek:true},{id:"d2",teks:"Olahraga pagi",cek:true},{id:"d3",teks:"Baca buku",cek:false},{id:"d4",teks:"Review catatan",cek:false},{id:"d5",teks:"Sholat Isya",cek:false}],mood:"penting",warna:WARNA[4],dibuat:Date.now()-3600000, diubah:Date.now()-3600000, pin:false,arsip:false,hapus:false,kunci:false,pengingat:null },
-  ];
+  // Pengguna baru → kosong (WelcomeScreen yang akan tampil)
+  return [];
 };
 
 const muatSettings = () => {
@@ -505,8 +502,15 @@ function PilihMood({ aktif, onChange }) {
 
 // ═══════════════════════ KARTU CATATAN ═══════════════════════════════════════
 
-function KartuCatatan({ c, onClick, q, tema }) {
+function KartuCatatan({ c, onClick, q, tema, t }) {
   const w = c.warna || W0;
+  const terang = !!t && t.kartu === "#ffffff";
+  const cardBg   = terang ? "#ffffff" : w.bg;
+  const cardGaris= terang ? "rgba(0,0,0,0.09)" : w.garis;
+  const judulCol = terang ? "#1a1a1a" : "#ece8e0";
+  const isiCol   = terang ? "#666666" : "#666";
+  const metaCol  = terang ? "#999999" : "#444";
+  const barBg    = terang ? "#eceae4" : "#1e1e1e";
   const sorot = (teks) => {
     if (!q||!teks) return teks;
     const i = teks.toLowerCase().indexOf(q.toLowerCase());
@@ -518,8 +522,8 @@ function KartuCatatan({ c, onClick, q, tema }) {
 
   return (
     <div onClick={() => onClick(c)} style={{
-      background: w.bg,
-      border:`1px solid ${w.garis}`,
+      background: cardBg,
+      border:`1px solid ${cardGaris}`,
       borderLeft:`4px solid ${w.aksen}`,
       borderRadius:12, padding:"13px 15px", cursor:"pointer",
       transition:"all .15s", position:"relative",
@@ -531,31 +535,32 @@ function KartuCatatan({ c, onClick, q, tema }) {
         {c.kunci && <span style={{fontSize:11, opacity:.6}}>🔒</span>}
         {c.pengingat && <span style={{fontSize:11, opacity:.6}}>🔔</span>}
       </div>
-      <div style={{fontFamily:"Georgia,serif", fontWeight:700, fontSize:15, color:"#ece8e0", marginBottom:4, lineHeight:1.4}}>
+      <div style={{fontFamily:"Georgia,serif", fontWeight:700, fontSize:15, color:judulCol, marginBottom:4, lineHeight:1.4}}>
         {sorot(c.judul)}
       </div>
       {c.tipe==="ceklis" && c.item?.length > 0 ? (
         <>
-          <div style={{fontSize:12, color:"#666", marginBottom:5}}>
+          <div style={{fontSize:12, color:isiCol, marginBottom:5}}>
             {c.item.filter(i=>i.cek).length}/{c.item.length} selesai
           </div>
-          <div style={{height:3, background:"#1e1e1e", borderRadius:3, overflow:"hidden"}}>
+          <div style={{height:3, background:barBg, borderRadius:3, overflow:"hidden"}}>
             <div style={{height:"100%", width:`${progres}%`, background:w.aksen, borderRadius:3, transition:"width .4s"}}/>
           </div>
         </>
       ) : c.isi ? (
-        <div style={{fontSize:13, color:"#666", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden"}}>
+        <div style={{fontSize:13, color:isiCol, display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden"}}>
           {sorot(c.isi)}
         </div>
       ) : null}
-      <div style={{fontSize:11, color:"#444", marginTop:6}}>{formatWaktu(c.diubah)}</div>
+      <div style={{fontSize:11, color:metaCol, marginTop:6}}>{formatWaktu(c.diubah)}</div>
     </div>
   );
 }
 
 // ═══════════════════════ DASHBOARD ═══════════════════════════════════════════
 
-function DashboardHarian({ catatan }) {
+function DashboardHarian({ catatan, t }) {
+  const terang = !!t && t.kartu === "#ffffff";
   const hari = new Date().toDateString();
   const aktif   = catatan.filter(n => !n.arsip && !n.hapus);
   const hariIni = aktif.filter(n => new Date(n.diubah).toDateString()===hari);
@@ -568,7 +573,7 @@ function DashboardHarian({ catatan }) {
   const topMood = Object.entries(byMood).sort((a,b)=>b[1]-a[1]).slice(0,4);
 
   return (
-    <div style={{margin:"12px 16px 4px", background:"linear-gradient(135deg,#151200,#0a0a0a)", border:"1px solid #2a2200", borderRadius:14, padding:16, position:"relative", overflow:"hidden"}}>
+    <div style={{margin:"12px 16px 4px", background:terang?"#ffffff":"linear-gradient(135deg,#151200,#0a0a0a)", border:`1px solid ${terang?"rgba(0,0,0,0.09)":"#2a2200"}`, borderRadius:14, padding:16, position:"relative", overflow:"hidden"}}>
       <div style={{position:"absolute", top:-24, right:-24, width:90, height:90, borderRadius:"50%", background:"#f5c84208"}}/>
       <div style={{fontSize:11, color:"#555", fontWeight:700, letterSpacing:1, marginBottom:10}}>HARI INI · {new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"})}</div>
       <div style={{display:"flex", gap:12, marginBottom:14}}>
@@ -576,13 +581,13 @@ function DashboardHarian({ catatan }) {
           <div style={{fontSize:30, fontWeight:900, color:"#f5c842", lineHeight:1}}>{hariIni.length}</div>
           <div style={{fontSize:10, color:"#555", marginTop:2}}>diubah</div>
         </div>
-        <div style={{width:1, background:"#222"}}/>
+        <div style={{width:1, background:terang?"#e0ddd6":"#222"}}/>
         <div style={{flex:1}}>
           <div style={{display:"flex", justifyContent:"space-between", marginBottom:4}}>
             <span style={{fontSize:11, color:"#666"}}>Progress ceklis hari ini</span>
             <span style={{fontSize:11, color:"#f5c842", fontWeight:700}}>{persen}%</span>
           </div>
-          <div style={{height:6, background:"#1a1a1a", borderRadius:6, overflow:"hidden"}}>
+          <div style={{height:6, background:terang?"#eceae4":"#1a1a1a", borderRadius:6, overflow:"hidden"}}>
             <div style={{height:"100%", width:`${persen}%`, background:"linear-gradient(90deg,#f5c842,#34c776)", borderRadius:6, transition:"width .6s"}}/>
           </div>
           <div style={{fontSize:10, color:"#444", marginTop:3}}>{sudahCek} dari {totalItem} item selesai</div>
@@ -606,7 +611,9 @@ function DashboardHarian({ catatan }) {
 
 // ═══════════════════════ FILTER BAR ══════════════════════════════════════════
 
-function FilterBar({ aktif, onChange }) {
+function FilterBar({ aktif, onChange, t }) {
+  const inact = t ? t.subteks : "#555";
+  const inactBorder = t ? t.border : "#202020";
   const opsi = [
     {id:"semua",       label:"Semua",    ikon:"📋"},
     ...MOOD.map(m => ({id:"mood_"+m.id, label:m.label, ikon:m.ikon})),
@@ -618,9 +625,9 @@ function FilterBar({ aktif, onChange }) {
       {opsi.map(o => (
         <button key={o.id} onClick={() => onChange(o.id)} style={{
           flexShrink:0, padding:"5px 12px", borderRadius:20, cursor:"pointer", fontSize:12,
-          border:`1px solid ${aktif===o.id?"#f5c842":"#202020"}`,
+          border:`1px solid ${aktif===o.id?"#f5c842":inactBorder}`,
           background: aktif===o.id ? "#f5c84222" : "transparent",
-          color: aktif===o.id ? "#f5c842" : "#555",
+          color: aktif===o.id ? "#f5c842" : inact,
           transition:"all .15s", whiteSpace:"nowrap",
         }}>{o.ikon} {o.label}</button>
       ))}
@@ -1842,6 +1849,72 @@ function HalamanDzikir({ catatan, onBukaCatatan, simpanCatatan }) {
 
 // ═══════════════════════ MAIN APP ════════════════════════════════════════════
 
+// ═══════════════════════ WELCOME SCREEN ══════════════════════════════════════
+
+function WelcomeScreen({ onBuatCatatan, onTemplate, onDzikir, isTerang, t, tema }) {
+  const fitur = [
+    { ikon:"🔥", teks:"Mood tag — tandai konteks setiap catatan" },
+    { ikon:"📊", teks:"Dashboard harian & progress ceklis" },
+    { ikon:"📿", teks:"Counter dzikir terintegrasi langsung" },
+    { ikon:"⚡", teks:"8 template siap pakai sesuai kebutuhan" },
+    { ikon:"🔒", teks:"Keamanan PIN & ekspor data" },
+    { ikon:"🆓", teks:"Gratis selamanya, Pro untuk fitur lanjutan" },
+  ];
+  return (
+    <div style={{ padding:"32px 24px", background:t.bg, minHeight:"70vh" }}>
+      {/* ATAS */}
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:16 }}>
+        <div style={{ fontSize:64 }}>📝</div>
+        <div style={{ textAlign:"center" }}>
+          <div style={{ fontSize:15, color:t.subteks }}>Selamat datang di</div>
+          <div style={{ fontSize:32, fontWeight:900, fontFamily:"Georgia,serif", letterSpacing:-1 }}>
+            <span style={{ color:t.teks }}>nya</span>
+            <span style={{ color:tema.aksen }}>tet</span>
+          </div>
+          <div style={{ fontSize:13, color:t.subteks, textAlign:"center", marginTop:8 }}>
+            Catatan harian untuk Muslim Indonesia 🇮🇩
+          </div>
+        </div>
+      </div>
+
+      {/* TOMBOL AKSI */}
+      <div style={{ marginTop:32 }}>
+        <button onClick={onTemplate} style={{
+          background:`linear-gradient(135deg, ${tema.aksen}, ${tema.aksen}cc)`, color:"#000",
+          fontWeight:800, borderRadius:14, padding:16, width:"100%", fontSize:15,
+          border:"none", cursor:"pointer",
+        }}>⚡ Mulai dari Template</button>
+
+        <button onClick={onBuatCatatan} style={{
+          background:"none", border:`2px solid ${t.border}`, color:t.teks,
+          borderRadius:14, padding:14, width:"100%", fontSize:14, marginTop:10, cursor:"pointer",
+        }}>📝 Buat Catatan Baru</button>
+
+        <button onClick={onDzikir} style={{
+          background:"none", border:`2px solid ${t.border}`, color:t.teks,
+          borderRadius:14, padding:14, width:"100%", fontSize:14, marginTop:10, cursor:"pointer",
+        }}>📿 Mulai Dzikir Pagi</button>
+      </div>
+
+      {/* KENAPA NYATET */}
+      <div style={{ marginTop:40 }}>
+        <div style={{ fontSize:11, color:t.muted, fontWeight:700, letterSpacing:1 }}>KENAPA NYATET?</div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:12, marginTop:16 }}>
+          {fitur.map((f,i)=>(
+            <div key={i} style={{
+              background:t.kartu, border:`1px solid ${t.border}`, borderRadius:12,
+              padding:"12px 16px", display:"flex", gap:12, alignItems:"center",
+            }}>
+              <span style={{ fontSize:20 }}>{f.ikon}</span>
+              <span style={{ fontSize:13, color:t.teks }}>{f.teks}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [catatan,      setCatatan]      = useState(muatCatatan);
   const [settings,     setSettings]     = useState(muatSettings);
@@ -1868,6 +1941,17 @@ export default function App() {
   const bukaGatePro = (pesan) => setGatePro(pesan);
 
   const tema = TEMA.find(t=>t.id===settings.tema)||TEMA[0];
+  const isTerang = settings.tema === "terang";
+  const t = {
+    teks:    isTerang ? "#1a1a1a"          : "#ece8e0",
+    subteks: isTerang ? "#666666"          : "#888888",
+    bg:      isTerang ? "#f0ede8"          : tema.bg,
+    nav:     isTerang ? "#ffffff"          : tema.nav,
+    kartu:   isTerang ? "#ffffff"          : "#111111",
+    border:  isTerang ? "rgba(0,0,0,0.09)" : "#1c1c1c",
+    input:   isTerang ? "#f5f5f0"          : "#1a1a1a",
+    muted:   isTerang ? "#999999"          : "#444444",
+  };
 
   useEffect(() => { simpanLokal(catatan); }, [catatan]);
   useEffect(() => { simpanSettings(settings); }, [settings]);
@@ -1955,7 +2039,7 @@ export default function App() {
   const labelUrut = {diubah:"waktu diubah",dibuat:"waktu dibuat",judul:"judul"};
 
   return (
-    <div style={{background:tema.bg, minHeight:"100dvh", maxWidth:480, margin:"0 auto", fontFamily:"'Segoe UI',sans-serif", color:"#ddd", position:"relative", fontSize:settings.ukuranFont}}>
+    <div style={{background:t.bg, minHeight:"100dvh", maxWidth:480, margin:"0 auto", fontFamily:"'Segoe UI',sans-serif", color:t.teks, position:"relative", fontSize:settings.ukuranFont}}>
 
       {/* TOAST */}
       {notif && (
@@ -1977,12 +2061,16 @@ export default function App() {
 
       {/* ── HEADER ── */}
       {(tampilan==="catatan"||tampilan==="cari") && (
-        <div style={{position:"sticky",top:0,zIndex:50,background:tema.bg,borderBottom:"1px solid #141414"}}>
+        <div style={{position:"sticky",top:0,zIndex:50,background:t.nav,borderBottom:`1px solid ${t.border}`}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px 8px"}}>
             <div style={{display:"flex",alignItems:"baseline",gap:2}}>
-              <span style={{fontSize:26,fontWeight:900,color:"#ece8e0",letterSpacing:-1,fontFamily:"Georgia,serif"}}>nya</span>
+              <button onClick={()=>setSettings({...settings, tema: isTerang ? "gelap" : "terang"})}
+                style={{background:"none",border:"none",cursor:"pointer",fontSize:18,marginRight:8,alignSelf:"center"}}>
+                {isTerang ? "🌙" : "☀️"}
+              </button>
+              <span style={{fontSize:26,fontWeight:900,color:t.teks,letterSpacing:-1,fontFamily:"Georgia,serif"}}>nya</span>
               <span style={{fontSize:26,fontWeight:900,color:tema.aksen,letterSpacing:-1,fontFamily:"Georgia,serif"}}>tet</span>
-              {settings.namaPengguna && <span style={{fontSize:12,color:"#444",marginLeft:8}}>· {settings.namaPengguna}</span>}
+              {settings.namaPengguna && <span style={{fontSize:12,color:t.muted,marginLeft:8}}>· {settings.namaPengguna}</span>}
             </div>
             {isPro ? (
               <span style={{background:"#191200",border:"1px solid #f5c84266",borderRadius:20,padding:"5px 12px",color:"#f5c842",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
@@ -1997,12 +2085,12 @@ export default function App() {
           </div>
           {tampilan==="catatan" && (
             <button onClick={()=>setMenuUrut(!menuUrut)}
-              style={{display:"flex",alignItems:"center",gap:6,width:"100%",padding:"7px 16px",background:"#0e0e0e",border:"none",borderBottom:"1px solid #141414",color:"#444",fontSize:12,cursor:"pointer"}}>
+              style={{display:"flex",alignItems:"center",gap:6,width:"100%",padding:"7px 16px",background:t.input,border:"none",borderBottom:`1px solid ${t.border}`,color:t.subteks,fontSize:12,cursor:"pointer"}}>
               Urutkan berdasarkan {labelUrut[urutkan]} ▾
             </button>
           )}
           {menuUrut && (
-            <div style={{background:"#111",borderBottom:"1px solid #1a1a1a"}}>
+            <div style={{background:t.kartu,borderBottom:`1px solid ${t.border}`}}>
               {Object.entries(labelUrut).map(([k,v])=>(
                 <button key={k} onClick={()=>{setUrutkan(k);setMenuUrut(false);}}
                   style={{display:"block",width:"100%",padding:"10px 20px",background:"none",border:"none",color:urutkan===k?tema.aksen:"#555",textAlign:"left",cursor:"pointer",fontSize:13}}>
@@ -2013,38 +2101,49 @@ export default function App() {
           )}
           {tampilan==="cari" && (
             <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px"}}>
-              <span style={{color:"#444",fontSize:18}}>🔍</span>
+              <span style={{color:t.muted,fontSize:18}}>🔍</span>
               <input autoFocus value={kueri} onChange={e=>setKueri(e.target.value)} placeholder="Cari catatan…"
-                style={{flex:1,background:"none",border:"none",outline:"none",color:"#ddd",fontSize:16}}/>
-              {kueri && <button onClick={()=>setKueri("")} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:20}}>×</button>}
+                style={{flex:1,background:"none",border:"none",outline:"none",color:t.teks,fontSize:16}}/>
+              {kueri && <button onClick={()=>setKueri("")} style={{background:"none",border:"none",color:t.subteks,cursor:"pointer",fontSize:20}}>×</button>}
             </div>
           )}
-          <FilterBar aktif={filter} onChange={setFilter}/>
+          <FilterBar aktif={filter} onChange={setFilter} t={t}/>
         </div>
       )}
 
       {tampilan==="kalender" && (
-        <div style={{position:"sticky",top:0,zIndex:50,background:tema.bg,padding:"16px",borderBottom:"1px solid #141414"}}>
-          <span style={{fontSize:20,fontWeight:800}}>📅 Kalender</span>
+        <div style={{position:"sticky",top:0,zIndex:50,background:t.nav,padding:"16px",borderBottom:`1px solid ${t.border}`}}>
+          <span style={{fontSize:20,fontWeight:800,color:t.teks}}>📅 Kalender</span>
         </div>
       )}
       {tampilan==="dzikir" && (
-        <div style={{position:"sticky",top:0,zIndex:50,background:tema.bg,borderBottom:"1px solid #141414",padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontSize:20,fontWeight:800,color:"#ece8e0"}}>📿 Dzikir</span>
-          <span style={{fontSize:11,color:"#555",background:"#1a1a1a",borderRadius:20,padding:"4px 10px"}}>Gratis Selamanya</span>
+        <div style={{position:"sticky",top:0,zIndex:50,background:t.nav,borderBottom:`1px solid ${t.border}`,padding:"14px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <span style={{fontSize:20,fontWeight:800,color:t.teks}}>📿 Dzikir</span>
+          <span style={{fontSize:11,color:t.subteks,background:t.input,borderRadius:20,padding:"4px 10px"}}>Gratis Selamanya</span>
         </div>
       )}
       {tampilan==="menu" && (
-        <div style={{position:"sticky",top:0,zIndex:50,background:tema.bg,padding:"16px",borderBottom:"1px solid #141414"}}>
-          <span style={{fontSize:20,fontWeight:800}}>☰ Menu</span>
+        <div style={{position:"sticky",top:0,zIndex:50,background:t.nav,padding:"16px",borderBottom:`1px solid ${t.border}`}}>
+          <span style={{fontSize:20,fontWeight:800,color:t.teks}}>☰ Menu</span>
         </div>
       )}
 
       {/* ── KONTEN ── */}
       <div style={{paddingBottom:84}}>
-        {(tampilan==="catatan"||tampilan==="cari") && (
+        {(tampilan==="catatan"||tampilan==="cari") &&
+          catatan.filter(n=>!n.hapus&&!n.arsip).length===0 && !lihatArsip && !lihatSampah && (
+          <WelcomeScreen
+            onBuatCatatan={()=>{setTipeBaru("teks");setSedangBuat(true);}}
+            onTemplate={()=>setModalTmpl(true)}
+            onDzikir={()=>setTampilan("dzikir")}
+            isTerang={isTerang} t={t} tema={tema}
+          />
+        )}
+
+        {(tampilan==="catatan"||tampilan==="cari") &&
+          !(catatan.filter(n=>!n.hapus&&!n.arsip).length===0 && !lihatArsip && !lihatSampah) && (
           <div>
-            {tampilan==="catatan"&&filter==="semua"&&!kueri && <DashboardHarian catatan={catatan}/>}
+            {tampilan==="catatan"&&filter==="semua"&&!kueri && catatan.filter(n=>!n.hapus&&!n.arsip).length>0 && <DashboardHarian catatan={catatan} t={t}/>}
 
             {lihatArsip && (
               <>
@@ -2087,12 +2186,12 @@ export default function App() {
 
             <div style={{padding:"10px 16px",display:"flex",flexDirection:"column",gap:10}}>
               {difilter.length===0 && (
-                <div style={{textAlign:"center",color:"#242424",padding:44,fontSize:14,lineHeight:2}}>
+                <div style={{textAlign:"center",color:t.muted,padding:44,fontSize:14,lineHeight:2}}>
                   {kueri?"Tidak ada hasil":"Belum ada catatan.\nKetuk + untuk mulai."}
                 </div>
               )}
               {difilter.map(n=>(
-                <KartuCatatan key={n.id} c={n} onClick={c=>setEditCatatan(c)} q={tampilan==="cari"?kueri:""} tema={tema}/>
+                <KartuCatatan key={n.id} c={n} onClick={c=>setEditCatatan(c)} q={tampilan==="cari"?kueri:""} tema={tema} t={t}/>
               ))}
             </div>
           </div>
@@ -2103,12 +2202,12 @@ export default function App() {
 
         {tampilan==="menu" && (
           <div style={{padding:16}}>
-            <div style={{background:"#111",borderRadius:14,padding:16,marginBottom:12,display:"flex",alignItems:"center",gap:14}}>
-              <div style={{width:46,height:46,borderRadius:"50%",background:"#1c1c1c",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
+            <div style={{background:t.kartu,border:`1px solid ${t.border}`,borderRadius:14,padding:16,marginBottom:12,display:"flex",alignItems:"center",gap:14}}>
+              <div style={{width:46,height:46,borderRadius:"50%",background:t.input,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>
                 {settings.namaPengguna?settings.namaPengguna[0].toUpperCase():"👤"}
               </div>
               <div>
-                <div style={{color:"#ddd",fontSize:15,fontWeight:600}}>{settings.namaPengguna||"Pengguna Nyatet"}</div>
+                <div style={{color:t.teks,fontSize:15,fontWeight:600}}>{settings.namaPengguna||"Pengguna Nyatet"}</div>
                 <div style={{color:"#3d9de8",fontSize:12,marginTop:2,cursor:"pointer"}} onClick={()=>setShowSettings(true)}>
                   Edit profil & pengaturan →
                 </div>
@@ -2142,15 +2241,15 @@ export default function App() {
                 }},
               ].map(m=>(
                 <button key={m.lab} onClick={m.aksi}
-                  style={{background:"#111",border:"1px solid #1c1c1c",borderRadius:12,padding:"16px 8px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,cursor:"pointer",color:"#ddd"}}>
+                  style={{background:t.kartu,border:`1px solid ${t.border}`,borderRadius:12,padding:"16px 8px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,cursor:"pointer",color:t.teks}}>
                   <span style={{fontSize:22}}>{m.ikon}</span>
-                  <span style={{fontSize:11,color:"#666",textAlign:"center"}}>{m.lab}</span>
+                  <span style={{fontSize:11,color:t.subteks,textAlign:"center"}}>{m.lab}</span>
                 </button>
               ))}
             </div>
 
-            <div style={{background:"#111",borderRadius:14,padding:16,marginBottom:12}}>
-              <div style={{color:"#2e2e2e",fontSize:11,fontWeight:700,marginBottom:12,letterSpacing:1}}>STATISTIK</div>
+            <div style={{background:t.kartu,border:`1px solid ${t.border}`,borderRadius:14,padding:16,marginBottom:12}}>
+              <div style={{color:t.subteks,fontSize:11,fontWeight:700,marginBottom:12,letterSpacing:1}}>STATISTIK</div>
               <div style={{display:"flex",justifyContent:"space-around"}}>
                 {[
                   {n:catatan.filter(c=>!c.arsip&&!c.hapus).length, lab:"Catatan", w:"#f5c842"},
@@ -2166,8 +2265,8 @@ export default function App() {
               </div>
             </div>
 
-            <div style={{background:"#111",borderRadius:14,padding:16}}>
-              <div style={{color:"#2e2e2e",fontSize:11,fontWeight:700,marginBottom:12,letterSpacing:1}}>MOOD CATATAN</div>
+            <div style={{background:t.kartu,border:`1px solid ${t.border}`,borderRadius:14,padding:16}}>
+              <div style={{color:t.subteks,fontSize:11,fontWeight:700,marginBottom:12,letterSpacing:1}}>MOOD CATATAN</div>
               <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
                 {MOOD.map(m=>{
                   const n=catatan.filter(c=>!c.arsip&&!c.hapus&&c.mood===m.id).length;
@@ -2217,7 +2316,7 @@ export default function App() {
 
       {/* BOTTOM NAV */}
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,
-        background:tema.nav,borderTop:"1px solid #141414",display:"flex",justifyContent:"space-around",padding:"8px 0",zIndex:50}}>
+        background:t.nav,borderTop:`1px solid ${t.border}`,display:"flex",justifyContent:"space-around",padding:"8px 0",zIndex:50}}>
         {[
           {ikon:"📋",lab:"Catatan",  key:"catatan"},
           {ikon:"📅",lab:"Kalender", key:"kalender"},
@@ -2235,7 +2334,7 @@ export default function App() {
             if(nav.key!=="cari") setKueri("");
           }}
           style={{background:"none",border:"none",display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer",padding:"4px 8px",
-            color:tampilan===nav.key?tema.aksen:"#2e2e2e",transition:"color .15s"}}>
+            color:tampilan===nav.key?tema.aksen:t.muted,transition:"color .15s"}}>
             <span style={{fontSize:20}}>{nav.ikon}</span>
             <span style={{fontSize:10}}>{nav.lab}</span>
           </button>
