@@ -91,8 +91,8 @@ const TEMA = [
   { id:"terang",  nama:"Terang",   bg:"#f0ede8", nav:"#ffffff", aksen:"#28c0b6" },
 ];
 
-const STORAGE_KEY   = "nyatet_v3";
-const SETTINGS_KEY  = "nyatet_settings";
+const STORAGE_KEY   = "kapurpad_v1";
+const SETTINGS_KEY  = "kapurpad_settings";
 const buatId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 
 const parseTarget = (teks) => {
@@ -100,7 +100,7 @@ const parseTarget = (teks) => {
   return m ? parseInt(m[1]) : null;
 };
 
-const NOTIF_DZIKIR_KEY = "nyatet_notif_dzikir";
+const NOTIF_DZIKIR_KEY = "kapurpad_notif_dzikir";
 
 const MOTIVASI_DZIKIR = [
   { teks: "Ketahuilah, hanya dengan mengingat Allah hati menjadi tenang.", sumber: "QS. Ar-Ra'd: 28" },
@@ -302,7 +302,7 @@ const muatSettings = () => {
     const d = localStorage.getItem(SETTINGS_KEY);
     if (d) return JSON.parse(d);
   } catch {}
-  return { tema:"gelap", ukuranFont:15, notifikasi:true, pin:"", namaPengguna:"" };
+  return { tema:"terang", ukuranFont:15, notifikasi:true, pin:"", namaPengguna:"" };
 };
 
 const simpanLokal   = (data) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {} };
@@ -310,8 +310,8 @@ const simpanSettings = (s)   => { try { localStorage.setItem(SETTINGS_KEY, JSON.
 
 // ═══════════════════════ PRO STATUS ══════════════════════════════════════════
 
-const PRO_KEY        = "nyatet_pro";
-const PRO_EXPIRY_KEY = "nyatet_pro_expiry";
+const PRO_KEY        = "kapurpad_pro";
+const PRO_EXPIRY_KEY = "kapurpad_pro_expiry";
 
 const cekStatusPro = () => {
   try {
@@ -361,7 +361,7 @@ const jadwalkanNotifDzikir = () => {
     const selisih = target - sekarang;
     setTimeout(async () => {
       const izin = await mintaIzinNotif();
-      if (izin) new Notification("Nyatet — Pengingat Dzikir", { body: pesan, icon: "/icons/icon-192.png", tag: "dzikir-" + jam });
+      if (izin) new Notification("KapurPad — Pengingat Dzikir", { body: pesan, icon: "/icons/icon-192.png", tag: "dzikir-" + jam });
       jadwalkanNotifDzikir();
     }, selisih);
   };
@@ -376,12 +376,12 @@ const jadwalkanNotif = (judul, waktu, isiPesan) => {
   const tid = setTimeout(async () => {
     const izin = await mintaIzinNotif();
     if (izin) {
-      new Notification(`🔔 Nyatet: ${judul}`, {
+      new Notification(`🔔 KapurPad: ${judul}`, {
         body: isiPesan || "Pengingat catatan kamu",
         icon: "/icons/icon-192.png",
         badge: "/icons/icon-96.png",
         vibrate: [200, 100, 200],
-        tag: "nyatet-reminder",
+        tag: "kapurpad-reminder",
       });
     }
   }, selisih);
@@ -392,8 +392,8 @@ const jadwalkanNotif = (judul, waktu, isiPesan) => {
 
 const bagikanCatatan = async (catatan) => {
   const teks = catatan.tipe === "ceklis"
-    ? `📋 ${catatan.judul}\n\n${(catatan.item||[]).map(i=>`${i.cek?"✅":"⬜"} ${i.teks}`).join("\n")}\n\n— Dikirim via Nyatet`
-    : `📝 ${catatan.judul}\n\n${catatan.isi}\n\n— Dikirim via Nyatet`;
+    ? `📋 ${catatan.judul}\n\n${(catatan.item||[]).map(i=>`${i.cek?"✅":"⬜"} ${i.teks}`).join("\n")}\n\n— Dikirim via KapurPad`
+    : `📝 ${catatan.judul}\n\n${catatan.isi}\n\n— Dikirim via KapurPad`;
 
   if (navigator.share) {
     try {
@@ -771,7 +771,7 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
     const blob = new Blob([data], {type:"application/json"});
     const url  = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `nyatet_backup_${Date.now()}.json`; a.click();
+    a.href = url; a.download = `kapurpad_backup_${Date.now()}.json`; a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -924,10 +924,10 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
         {/* Tentang */}
         <Seksi judul="TENTANG">
           <div style={{padding:"10px 0", color:"#555", fontSize:13, lineHeight:1.8}}>
-            <div>📱 <strong style={{color:"#888"}}>Nyatet</strong> versi 1.0.0</div>
+            <div>📱 <strong style={{color:"#888"}}>KapurPad</strong> versi 1.0.0</div>
             <div>📦 Catatan tersimpan: {catatan.filter(n=>!n.hapus).length}</div>
             <div>💾 Data tersimpan lokal di perangkat kamu</div>
-            <div style={{marginTop:8,fontSize:11}}>© 2026 Nyatet · Semua hak dilindungi</div>
+            <div style={{marginTop:8,fontSize:11}}>© 2026 KapurPad · Semua hak dilindungi</div>
           </div>
         </Seksi>
 
@@ -984,8 +984,8 @@ function ModalPremium({ onTutup, onProAktif }) {
     setLoading(true);
     try {
       const orderId = planDipilih === "tahunan"
-        ? `NYATET-YEAR-${Date.now()}`
-        : `NYATET-MONTH-${Date.now()}`;
+        ? `KAPURPAD-YEAR-${Date.now()}`
+        : `KAPURPAD-MONTH-${Date.now()}`;
       const harga = planDipilih === "tahunan" ? 99000 : 24000;
 
       // Minta snap token dari backend
@@ -1031,7 +1031,7 @@ function ModalPremium({ onTutup, onProAktif }) {
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:22}}>👑</span>
               <span style={{fontSize:22,fontWeight:900,letterSpacing:-0.5}}>
-                <span style={{color:"#f5c842"}}>Nyatet</span><span style={{color:"#ece8e0"}}> Pro</span>
+                <span style={{color:"#f5c842"}}>KapurPad</span><span style={{color:"#ece8e0"}}> Pro</span>
               </span>
             </div>
             <div style={{fontSize:13,color:"#555",marginTop:2}}>Buka semua fitur tanpa batas</div>
@@ -1084,7 +1084,12 @@ function ModalPremium({ onTutup, onProAktif }) {
 
 // ═══════════════════════ KALENDER ════════════════════════════════════════════
 
-function TampilKalender({ catatan, onBukaCatatan }) {
+// Tanggal acuan catatan di kalender: tanggalTarget kalau ada, jika tidak pakai diubah
+const tanggalKalender = (n) => new Date(n.tanggalTarget || n.diubah);
+
+function TampilKalender({ catatan, onBukaCatatan, onTambahDiTanggal, onSetPengingatTanggal, t, tema }) {
+  const T = t || { teks:"#ece8e0", subteks:"#888", bg:"#080808", nav:"#0a0a0a", kartu:"#111", border:"#1c1c1c", input:"#1a1a1a", muted:"#444" };
+  const aksen = (tema && tema.aksen) || "#28c0b6";
   const [tgl,setTgl] = useState(new Date());
   const [hariDipilih,setHariDipilih] = useState(null);
   const th=tgl.getFullYear(), bl=tgl.getMonth();
@@ -1092,62 +1097,112 @@ function TampilKalender({ catatan, onBukaCatatan }) {
   const HARI  = ["MIN","SEN","SEL","RAB","KAM","JUM","SAB"];
   const awal  = new Date(th,bl,1).getDay();
   const total = new Date(th,bl+1,0).getDate();
+  const aktif = catatan.filter(n=>!n.arsip&&!n.hapus);
+
+  // Catatan per hari (berdasarkan tanggalTarget/diubah)
   const perHari = {};
-  catatan.filter(n=>!n.arsip&&!n.hapus).forEach(n=>{
-    const d=new Date(n.diubah);
+  aktif.forEach(n=>{
+    const d=tanggalKalender(n);
     if(d.getFullYear()===th&&d.getMonth()===bl){
       const h=d.getDate(); (perHari[h]=perHari[h]||[]).push(n);
     }
   });
+
+  // Pengingat per hari (berdasarkan field pengingat)
+  const pengingatHari = {};
+  aktif.forEach(n=>{
+    if(!n.pengingat) return;
+    const d=new Date(n.pengingat);
+    if(d.getFullYear()===th&&d.getMonth()===bl){
+      const h=d.getDate(); (pengingatHari[h]=pengingatHari[h]||[]).push(n);
+    }
+  });
+
   const sel=[]; for(let i=0;i<awal;i++)sel.push(null); for(let i=1;i<=total;i++)sel.push(i);
   const today=new Date();
 
+  // Ringkasan
+  const catatanBulanIni = Object.values(perHari).reduce((s,a)=>s+a.length,0);
+  const pengingatAktif  = aktif.filter(n=>n.pengingat && new Date(n.pengingat).getTime() >= Date.now()).length;
+
   const catatanHariDipilih = hariDipilih ? (perHari[hariDipilih]||[]) : [];
+  const tsHariDipilih = hariDipilih ? new Date(th,bl,hariDipilih,12,0,0,0).getTime() : null;
 
   return (
     <div style={{paddingBottom:80}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:16,background:"#0e0e0e",borderBottom:"1px solid #1a1a1a"}}>
-        <button onClick={()=>setTgl(new Date(th,bl-1,1))} style={{background:"none",border:"none",color:"#555",fontSize:18,cursor:"pointer"}}>◀</button>
-        <span style={{color:"#ece8e0",fontWeight:700,fontSize:16}}>{BULAN[bl]} {th}</span>
-        <button onClick={()=>setTgl(new Date(th,bl+1,1))} style={{background:"none",border:"none",color:"#555",fontSize:18,cursor:"pointer"}}>▶</button>
+      {/* RINGKASAN */}
+      <div style={{padding:"12px 16px",background:T.kartu,borderBottom:`1px solid ${T.border}`,display:"flex",gap:16,fontSize:13}}>
+        <span style={{color:T.teks,fontWeight:700}}>📌 {catatanBulanIni} <span style={{color:T.subteks,fontWeight:400}}>catatan bulan ini</span></span>
+        <span style={{color:T.teks,fontWeight:700}}>🔔 {pengingatAktif} <span style={{color:T.subteks,fontWeight:400}}>pengingat aktif</span></span>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",background:"#0e0e0e"}}>
+
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:16,background:T.nav,borderBottom:`1px solid ${T.border}`}}>
+        <button onClick={()=>setTgl(new Date(th,bl-1,1))} style={{background:"none",border:"none",color:T.subteks,fontSize:18,cursor:"pointer"}}>◀</button>
+        <span style={{color:T.teks,fontWeight:700,fontSize:16}}>{BULAN[bl]} {th}</span>
+        <button onClick={()=>setTgl(new Date(th,bl+1,1))} style={{background:"none",border:"none",color:T.subteks,fontSize:18,cursor:"pointer"}}>▶</button>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",background:T.nav}}>
         {HARI.map((h,i)=>(
-          <div key={h} style={{textAlign:"center",padding:"10px 0",fontSize:11,fontWeight:700,color:i===0?"#e84040":i===6?"#3d9de8":"#444"}}>{h}</div>
+          <div key={h} style={{textAlign:"center",padding:"10px 0",fontSize:11,fontWeight:700,color:i===0?"#e84040":i===6?"#3d9de8":T.muted}}>{h}</div>
         ))}
         {sel.map((d,i)=>{
           const isToday=d&&today.getDate()===d&&today.getMonth()===bl&&today.getFullYear()===th;
           const isPilih=d&&hariDipilih===d;
           const dot=d?(perHari[d]||[]):[];
+          const adaPengingat=d&&(pengingatHari[d]||[]).length>0;
           return (
             <div key={i} onClick={()=>d&&setHariDipilih(isPilih?null:d)}
-              style={{minHeight:54,border:"1px solid #141414",padding:4,background:isPilih?"#1a1600":isToday?"#0d1520":"transparent",cursor:d?"pointer":"default"}}>
+              style={{minHeight:54,border:`1px solid ${T.border}`,padding:4,
+                background:isPilih?aksen+"22":"transparent",
+                outline:isToday?`2px solid ${aksen}`:"none",outlineOffset:-2,
+                cursor:d?"pointer":"default"}}>
               {d&&<>
-                <span style={{fontSize:13,display:"block",textAlign:"center",lineHeight:"22px",width:22,
-                  color:isPilih?"#f5c842":isToday?"#3d9de8":"#777",fontWeight:isToday||isPilih?700:400,
-                  border:isPilih?"1px solid #f5c842":isToday?"1px solid #3d9de8":"none",borderRadius:4}}>{d}</span>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <span style={{fontSize:13,textAlign:"center",lineHeight:"22px",minWidth:22,
+                    color:isPilih?aksen:isToday?aksen:T.subteks,fontWeight:isToday||isPilih?700:400}}>{d}</span>
+                  {adaPengingat&&<span style={{fontSize:10}}>🔔</span>}
+                </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:2,marginTop:2}}>
-                  {dot.slice(0,4).map(n=><div key={n.id} style={{width:6,height:6,borderRadius:"50%",background:n.warna?.aksen||"#f5c842"}}/>)}
+                  {dot.slice(0,4).map(n=><div key={n.id} style={{width:6,height:6,borderRadius:"50%",background:n.warna?.aksen||aksen}}/>)}
                 </div>
               </>}
             </div>
           );
         })}
       </div>
-      {hariDipilih && catatanHariDipilih.length>0 && (
-        <div style={{padding:"12px 16px"}}>
-          <div style={{fontSize:12,color:"#555",marginBottom:10,fontWeight:700}}>
-            CATATAN {hariDipilih} {BULAN[bl].toUpperCase()} ({catatanHariDipilih.length})
+
+      {/* POPUP HARI DIPILIH */}
+      {hariDipilih && (
+        <div style={{padding:"14px 16px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div style={{fontSize:15,fontWeight:800,color:T.teks}}>📅 {hariDipilih} {BULAN[bl]} {th}</div>
+            <button onClick={()=>setHariDipilih(null)} style={{background:"none",border:"none",color:T.subteks,cursor:"pointer",fontSize:18}}>×</button>
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {catatanHariDipilih.map(n=>(
-              <KartuCatatan key={n.id} c={n} onClick={onBukaCatatan} q=""/>
-            ))}
-          </div>
+
+          {/* Daftar catatan di tanggal itu */}
+          {catatanHariDipilih.length>0 ? (
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
+              {catatanHariDipilih.map(n=>(
+                <KartuCatatan key={n.id} c={n} onClick={onBukaCatatan} q="" t={t} tema={tema}/>
+              ))}
+            </div>
+          ) : (
+            <div style={{color:T.muted,padding:"10px 0 16px",fontSize:13}}>Belum ada catatan pada tanggal ini.</div>
+          )}
+
+          {/* Aksi */}
+          <button onClick={()=>onTambahDiTanggal && onTambahDiTanggal(tsHariDipilih)}
+            style={{width:"100%",padding:13,borderRadius:12,border:"none",cursor:"pointer",fontSize:14,fontWeight:700,
+              background:aksen,color:"#000",marginBottom:10}}>
+            + Tambah catatan di tanggal ini
+          </button>
+          <button onClick={()=>onSetPengingatTanggal && onSetPengingatTanggal(tsHariDipilih)}
+            style={{width:"100%",padding:13,borderRadius:12,cursor:"pointer",fontSize:14,fontWeight:700,
+              background:"none",border:`2px solid ${T.border}`,color:T.teks}}>
+            🔔 Set pengingat di tanggal ini
+          </button>
         </div>
-      )}
-      {hariDipilih && catatanHariDipilih.length===0 && (
-        <div style={{textAlign:"center",color:"#333",padding:24,fontSize:13}}>Tidak ada catatan pada tanggal ini</div>
       )}
     </div>
   );
@@ -1868,8 +1923,8 @@ function WelcomeScreen({ onBuatCatatan, onTemplate, onDzikir, isTerang, t, tema 
         <div style={{ textAlign:"center" }}>
           <div style={{ fontSize:15, color:t.subteks }}>Selamat datang di</div>
           <div style={{ fontSize:32, fontWeight:900, fontFamily:"Georgia,serif", letterSpacing:-1 }}>
-            <span style={{ color:t.teks }}>nya</span>
-            <span style={{ color:tema.aksen }}>tet</span>
+            <span style={{ color:t.teks }}>kapur</span>
+            <span style={{ color:tema.aksen }}>pad</span>
           </div>
           <div style={{ fontSize:13, color:t.subteks, textAlign:"center", marginTop:8 }}>
             Catatan harian untuk Muslim Indonesia 🇮🇩
@@ -1896,9 +1951,9 @@ function WelcomeScreen({ onBuatCatatan, onTemplate, onDzikir, isTerang, t, tema 
         }}>📿 Mulai Dzikir Pagi</button>
       </div>
 
-      {/* KENAPA NYATET */}
+      {/* KENAPA KAPURPAD */}
       <div style={{ marginTop:40 }}>
-        <div style={{ fontSize:11, color:t.muted, fontWeight:700, letterSpacing:1 }}>KENAPA NYATET?</div>
+        <div style={{ fontSize:11, color:t.muted, fontWeight:700, letterSpacing:1 }}>KENAPA KAPURPAD?</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:12, marginTop:16 }}>
           {fitur.map((f,i)=>(
             <div key={i} style={{
@@ -1937,8 +1992,21 @@ export default function App() {
   const [notif,        setNotif]        = useState(null);
   const [isPro,        setIsPro]        = useState(cekStatusPro);
   const [gatePro,      setGatePro]      = useState(null);
+  const [prefillKal,   setPrefillKal]   = useState(null);
 
   const bukaGatePro = (pesan) => setGatePro(pesan);
+
+  const toLocalInput = (d) => {
+    const p = n => String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+  const tambahDiTanggal = (ts, withReminder) => {
+    const base = { tipe:"teks", warna:W0, tanggalTarget: ts };
+    if (withReminder) { const d=new Date(ts); d.setHours(8,0,0,0); base.pengingat = toLocalInput(d); }
+    setPrefillKal(base);
+    setTmplDipilih(null);
+    setSedangBuat(true);
+  };
 
   const tema = TEMA.find(t=>t.id===settings.tema)||TEMA[0];
   const isTerang = settings.tema === "terang";
@@ -2010,7 +2078,7 @@ export default function App() {
   const catatanDariTmpl = tmplDipilih ? {
     tipe:tmplDipilih.tipe, judul:tmplDipilih.judul, isi:tmplDipilih.isi||"",
     item:(tmplDipilih.item||[]).map(t=>({id:buatId(),teks:t,cek:false,counter:0})), warna:W0,
-  } : {tipe:tipeBaru, warna:W0};
+  } : prefillKal ? prefillKal : {tipe:tipeBaru, warna:W0};
 
   // ── LAYAR PIN ──
   if (pinCheck) return (
@@ -2027,7 +2095,7 @@ export default function App() {
     <EditorCatatan
       catatan={sedangBuat?catatanDariTmpl:editCatatan}
       onSimpan={simpanCatatan}
-      onTutup={()=>{setEditCatatan(null);setSedangBuat(false);setTmplDipilih(null);}}
+      onTutup={()=>{setEditCatatan(null);setSedangBuat(false);setTmplDipilih(null);setPrefillKal(null);}}
       onHapus={hapusCatatan}
       onArsip={arsipCatatan}
       settings={settings}
@@ -2068,8 +2136,8 @@ export default function App() {
                 style={{background:"none",border:"none",cursor:"pointer",fontSize:18,marginRight:8,alignSelf:"center"}}>
                 {isTerang ? "🌙" : "☀️"}
               </button>
-              <span style={{fontSize:26,fontWeight:900,color:t.teks,letterSpacing:-1,fontFamily:"Georgia,serif"}}>nya</span>
-              <span style={{fontSize:26,fontWeight:900,color:tema.aksen,letterSpacing:-1,fontFamily:"Georgia,serif"}}>tet</span>
+              <span style={{fontSize:26,fontWeight:900,color:t.teks,letterSpacing:-1,fontFamily:"Georgia,serif"}}>kapur</span>
+              <span style={{fontSize:26,fontWeight:900,color:tema.aksen,letterSpacing:-1,fontFamily:"Georgia,serif"}}>pad</span>
               {settings.namaPengguna && <span style={{fontSize:12,color:t.muted,marginLeft:8}}>· {settings.namaPengguna}</span>}
             </div>
             {isPro ? (
@@ -2197,7 +2265,7 @@ export default function App() {
           </div>
         )}
 
-        {tampilan==="kalender" && <TampilKalender catatan={catatan} onBukaCatatan={c=>setEditCatatan(c)}/>}
+        {tampilan==="kalender" && <TampilKalender catatan={catatan} onBukaCatatan={c=>setEditCatatan(c)} onTambahDiTanggal={ts=>tambahDiTanggal(ts,false)} onSetPengingatTanggal={ts=>tambahDiTanggal(ts,true)} t={t} tema={tema}/>}
         {tampilan==="dzikir"   && <HalamanDzikir catatan={catatan} onBukaCatatan={c=>setEditCatatan(c)} simpanCatatan={simpanCatatan}/>}
 
         {tampilan==="menu" && (
@@ -2207,7 +2275,7 @@ export default function App() {
                 {settings.namaPengguna?settings.namaPengguna[0].toUpperCase():"👤"}
               </div>
               <div>
-                <div style={{color:t.teks,fontSize:15,fontWeight:600}}>{settings.namaPengguna||"Pengguna Nyatet"}</div>
+                <div style={{color:t.teks,fontSize:15,fontWeight:600}}>{settings.namaPengguna||"Pengguna KapurPad"}</div>
                 <div style={{color:"#3d9de8",fontSize:12,marginTop:2,cursor:"pointer"}} onClick={()=>setShowSettings(true)}>
                   Edit profil & pengaturan →
                 </div>
@@ -2217,7 +2285,7 @@ export default function App() {
             <div onClick={()=>setModalPro(true)} style={{background:"linear-gradient(135deg,#191200,#0e0e0e)",border:"1px solid #f5c84233",borderRadius:14,padding:16,marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
               <span style={{fontSize:28}}>👑</span>
               <div>
-                <div style={{color:"#f5c842",fontWeight:800,fontSize:15}}>Nyatet Pro</div>
+                <div style={{color:"#f5c842",fontWeight:800,fontSize:15}}>KapurPad Pro</div>
                 <div style={{color:"#555",fontSize:12,marginTop:2}}>Folder, AI, Cloud & lebih banyak lagi</div>
               </div>
               <div style={{marginLeft:"auto",color:"#f5c842",fontSize:20}}>›</div>
@@ -2235,7 +2303,7 @@ export default function App() {
                   const b=new Blob([d],{type:"application/json"});
                   const u=URL.createObjectURL(b);
                   const a=document.createElement("a");
-                  a.href=u;a.download=`nyatet_${Date.now()}.json`;a.click();
+                  a.href=u;a.download=`kapurpad_${Date.now()}.json`;a.click();
                   URL.revokeObjectURL(u);
                   tampilNotif("📤 Data diekspor!");
                 }},

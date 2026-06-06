@@ -1,8 +1,8 @@
 {
-  "name": "nyatet",
+  "name": "kapurpad",
   "version": "1.0.0",
   "private": true,
-  "description": "Nyatet - Aplikasi Catatan Harian",
+  "description": "KapurPad - Aplikasi Catatan Harian",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

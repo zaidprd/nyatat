@@ -48,7 +48,7 @@ exports.handler = async (event) => {
         id: plan,
         price: amount,
         quantity: 1,
-        name: plan === "tahunan" ? "Nyatet Pro — Tahunan" : "Nyatet Pro — Bulanan",
+        name: plan === "tahunan" ? "KapurPad Pro — Tahunan" : "KapurPad Pro — Bulanan",
       },
     ],
     credit_card: { secure: true },

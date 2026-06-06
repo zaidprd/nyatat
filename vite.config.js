@@ -9,11 +9,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Nyatet - Catatan Harian',
-        short_name: 'Nyatet',
+        name: 'KapurPad - Catatan Harian',
+        short_name: 'KapurPad',
         description: 'Aplikasi catatan harian dengan mood tag, template cepat, dan mode fokus',
-        theme_color: '#080808',
-        background_color: '#080808',
+        theme_color: '#f0ede8',
+        background_color: '#f0ede8',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -34,7 +34,7 @@ export default defineConfig({
             sizes: '1080x1920',
             type: 'image/png',
             form_factor: 'narrow',
-            label: 'Daftar Catatan Nyatet'
+            label: 'Daftar Catatan KapurPad'
           }
         ],
         categories: ['productivity', 'utilities'],

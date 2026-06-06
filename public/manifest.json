@@ -1,9 +1,9 @@
 {
-  "name": "Nyatet - Catatan Harian",
-  "short_name": "Nyatet",
+  "name": "KapurPad - Catatan Harian",
+  "short_name": "KapurPad",
   "description": "Aplikasi catatan harian dengan mood tag, template cepat, dan mode fokus",
-  "theme_color": "#080808",
-  "background_color": "#080808",
+  "theme_color": "#f0ede8",
+  "background_color": "#f0ede8",
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
