@@ -111,6 +111,161 @@ const MOTIVASI_DZIKIR = [
   { teks: "Barangsiapa membaca Ayat Kursi setiap pagi, ia mendapat perlindungan Allah hingga petang.", sumber: "Atsar Ibnu Mas'ud, Silsilah Shahihah" },
 ];
 
+// ═══════════════════════ DATA DZIKIR ═════════════════════════════════════════
+
+const DZIKIR_PAGI = [
+  {
+    no:1, nama:"Ayat Kursi",
+    arab:"اللّٰهُ لَآ إِلٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ، لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ، لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ، مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ، يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ، وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَآءَ، وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ، وَلَا يَئُودُهُ حِفْظُهُمَا، وَهُوَ الْعَلِيُّ الْعَظِيمُ",
+    latin:"Allāhu lā ilāha illā huwal ḥayyul qayyūm, lā ta'khudzuhū sinatuw walā naum, lahū mā fis samāwāti wa mā fil arḍ, man dzal ladzī yasyfa'u 'indahū illā bi idznih, ya'lamu mā baina aidīhim wa mā khalfahum, wa lā yuḥīṭūna bisyai'im min 'ilmihī illā bimā syā', wasi'a kursiyyuhus samāwāti wal arḍ, wa lā ya'ūduhū ḥifẓuhumā, wa huwal 'aliyyul 'aẓīm.",
+    terjemah:"Allah, Yang tidak ada ilah yang berhak disembah kecuali Dia, Yang Mahahidup lagi terus-menerus mengurusi makhluk-Nya. Tidak mengantuk dan tidak tidur. Kepunyaan-Nya apa yang di langit dan di bumi. Tidak ada yang dapat memberi syafa'at di sisi Allah tanpa izin-Nya. Allah mengetahui apa-apa yang di hadapan mereka dan di belakang mereka. Mereka tidak mengetahui apa-apa dari ilmu Allah melainkan apa yang dikehendaki-Nya. Kursi Allah meliputi langit dan bumi. Dan Allah tidak merasa berat memelihara keduanya. Dan Allah Maha Tinggi lagi Maha Besar.",
+    dibaca:1,
+    faedah:"Barangsiapa membaca ayat ini ketika pagi hari, maka ia dilindungi dari gangguan jin hingga sore hari. (HR. Al-Hakim, shahih)"
+  },
+  {
+    no:2, nama:"Surat Al-Ikhlas",
+    arab:"قُلْ هُوَ اللّٰهُ أَحَدٌ ۝ اَللّٰهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ",
+    latin:"Qul huwallāhu aḥad. Allāhuṣ ṣamad. Lam yalid walam yūlad. Walam yakul lahū kufuwan aḥad.",
+    terjemah:"Katakanlah: Dialah Allah, Yang Maha Esa. Allah adalah ilah yang bergantung kepada-Nya segala sesuatu. Dia tidak beranak dan tiada pula diperanakkan. Dan tidak ada seorang pun yang setara dengan Dia.",
+    dibaca:3,
+    faedah:"Membaca tiga surat ini (Al-Ikhlas, Al-Falaq, An-Naas) pagi dan sore mencukupi dari segala sesuatu. (HR. Abu Dawud, hasan shahih)"
+  },
+  {
+    no:3, nama:"Surat Al-Falaq",
+    arab:"قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۝ مِن شَرِّ مَا خَلَقَ ۝ وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝ وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ",
+    latin:"Qul a'ūdzu birabbil falaq. Min syarri mā khalaq. Wamin syarri ghāsiqin idzā waqab. Wamin syarrin naffāthāti fil 'uqad. Wamin syarri ḥāsidin idzā ḥasad.",
+    terjemah:"Katakanlah: Aku berlindung kepada Rabb yang menguasai waktu Subuh, dari kejahatan makhluk-Nya, dari kejahatan malam apabila telah gelap gulita, dari kejahatan wanita-wanita tukang sihir yang menghembus pada buhul-buhul, dan dari kejahatan orang yang dengki apabila ia dengki.",
+    dibaca:3, faedah:""
+  },
+  {
+    no:4, nama:"Surat An-Naas",
+    arab:"قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ إِلٰهِ النَّاسِ ۝ مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ",
+    latin:"Qul a'ūdzu birabbin nās. Malikin nās. Ilāhin nās. Min syarril waswāsil khannās. Alladzī yuwaswisu fī ṣudūrin nās. Minal jinnati wan nās.",
+    terjemah:"Katakanlah: Aku berlindung kepada Rabb manusia, Raja manusia, Sembahan manusia, dari kejahatan bisikan syaitan yang biasa bersembunyi, yang membisikkan kejahatan ke dalam dada manusia, dari golongan jin dan manusia.",
+    dibaca:3, faedah:""
+  },
+  {
+    no:5, nama:"Doa Pagi",
+    arab:"أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلّٰهِ، وَالْحَمْدُ لِلّٰهِ، لَا إِلٰهَ إِلَّا اللّٰهُ وَحْدَهُ لَا شَرِيْكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيْرٌ. رَبِّ أَسْأَلُكَ خَيْرَ مَا فِيْ هٰذَا الْيَوْمِ وَخَيْرَ مَا بَعْدَهُ، وَأَعُوْذُ بِكَ مِنْ شَرِّ مَا فِيْ هٰذَا الْيَوْمِ وَشَرِّ مَا بَعْدَهُ",
+    latin:"Ashbaḥnā wa ashbaḥal mulku lillāh, walḥamdu lillāh, lā ilāha illallāhu waḥdahū lā syarīka lah, lahul mulku walahul ḥamd, wa huwa 'alā kulli syai'in qadīr. Rabbi as'aluka khayra mā fī hādzal yawm wa khayra mā ba'dah, wa a'ūdzu bika min syarri mā fī hādzal yawm wa syarri mā ba'dah.",
+    terjemah:"Kami telah memasuki waktu pagi dan kerajaan hanya milik Allah. Segala puji bagi Allah. Tidak ada ilah yang berhak disembah kecuali Allah semata, tiada sekutu bagi-Nya. Hanya milik-Nya kerajaan dan segala puji hanya bagi-Nya. Ya Rabbku, aku memohon kebaikan hari ini dan kebaikan sesudahnya, dan aku berlindung kepada-Mu dari kejelekan hari ini dan kejelekan sesudahnya.",
+    dibaca:1, faedah:""
+  },
+  {
+    no:6, nama:"Doa Berserah Diri",
+    arab:"اَللّٰهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوْتُ، وَإِلَيْكَ النُّشُوْرُ",
+    latin:"Allāhumma bika aṣbaḥnā, wa bika amsaynā, wa bika naḥyā, wa bika namūtu, wa ilaikan nusyūr.",
+    terjemah:"Ya Allah, dengan rahmat dan pertolongan-Mu kami memasuki waktu pagi, dan dengan rahmat dan pertolongan-Mu kami memasuki waktu sore. Dengan rahmat dan pertolongan-Mu kami hidup dan dengan kehendak-Mu kami mati. Dan kepada-Mu kami akan dibangkitkan.",
+    dibaca:1, faedah:""
+  },
+  {
+    no:7, nama:"Sayyidul Istighfar",
+    arab:"اَللّٰهُمَّ أَنْتَ رَبِّيْ لَا إِلٰهَ إِلَّا أَنْتَ، خَلَقْتَنِيْ وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوْذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوْءُ لَكَ بِنِعْمَتِكَ عَلَيَّ وَأَبُوْءُ بِذَنْبِيْ، فَاغْفِرْ لِيْ، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوْبَ إِلَّا أَنْتَ",
+    latin:"Allāhumma anta rabbī lā ilāha illā anta, khalaqtanī wa ana 'abduka, wa ana 'alā 'ahdika wa wa'dika mastatha'tu, a'ūdzu bika min syarri mā ṣana'tu, abū'u laka bini'matika 'alayya wa abū'u bidzambī, faghfir lī, fa innahū lā yaghfirudzdzunūba illā anta.",
+    terjemah:"Ya Allah, Engkau adalah Rabbku, tidak ada ilah yang berhak disembah kecuali Engkau. Engkaulah yang menciptakanku. Aku adalah hamba-Mu. Aku akan setia pada perjanjianku pada-Mu semampuku. Aku berlindung kepada-Mu dari kejelekan yang kuperbuat. Aku mengakui nikmat-Mu kepadaku dan aku mengakui dosaku. Oleh karena itu, ampunilah aku. Sesungguhnya tiada yang mengampuni dosa kecuali Engkau.",
+    dibaca:1,
+    faedah:"Barangsiapa membacanya dengan yakin di waktu pagi lalu meninggal sebelum sore, maka ia termasuk ahli surga. (HR. Al-Bukhari)"
+  },
+  {
+    no:8, nama:"Doa Keselamatan",
+    arab:"اَللّٰهُمَّ عَافِنِى فِى بَدَنِى، اَللّٰهُمَّ عَافِنِى فِى سَمْعِى، اَللّٰهُمَّ عَافِنِى فِى بَصَرِى، لَا إِلٰهَ إِلَّا أَنْتَ. اَللّٰهُمَّ إِنِّيْ أَعُوْذُ بِكَ مِنَ الْكُفْرِ وَالْفَقْرِ، وَأَعُوْذُ بِكَ مِنْ عَذَابِ الْقَبْرِ، لَا إِلٰهَ إِلَّا أَنْتَ",
+    latin:"Allāhumma 'āfinī fī badanī, Allāhumma 'āfinī fī sam'ī, Allāhumma 'āfinī fī baṣarī, lā ilāha illā anta. Allāhumma innī a'ūdzu bika minal kufri wal faqr, wa a'ūdzu bika min 'adzābil qabr, lā ilāha illā anta.",
+    terjemah:"Ya Allah, selamatkan tubuhku. Ya Allah, selamatkan pendengaranku. Ya Allah, selamatkan penglihatanku. Tiada ilah yang berhak diibadahi kecuali Engkau. Ya Allah, sesungguhnya aku berlindung kepada-Mu dari kekufuran dan kefakiran. Aku berlindung kepada-Mu dari siksa kubur. Tiada ilah kecuali Engkau.",
+    dibaca:3, faedah:""
+  },
+  {
+    no:9, nama:"Doa Kecukupan",
+    arab:"حَسْبِيَ اللّٰهُ لَا إِلٰهَ إِلَّا هُوَ، عَلَيْهِ تَوَكَّلْتُ، وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
+    latin:"Ḥasbiyallāhu lā ilāha illā huw, 'alayhi tawakkaltu, wa huwa rabbul 'arsyil 'aẓīm.",
+    terjemah:"Cukuplah Allah bagiku, tiada tuhan yang berhak disembah kecuali Dia. Hanya kepada-Nya aku bertawakal, dan Dialah Rabb yang memiliki Arasy yang besar.",
+    dibaca:7,
+    faedah:"Barangsiapa membacanya 7× pagi dan sore, Allah akan mencukupkan semua urusannya. (HR. Abu Dawud, hasan)"
+  },
+  {
+    no:10, nama:"Bismillah Perlindungan",
+    arab:"بِسْمِ اللّٰهِ الَّذِى لَا يَضُرُّ مَعَ اسْمِهِ شَىْءٌ فِى الأَرْضِ وَلَا فِى السَّمَاءِ، وَهُوَ السَّمِيعُ الْعَلِيمُ",
+    latin:"Bismillāhil ladzī lā yaḍurru ma'asmihi syai'un fil arḍi walā fis samā', wa huwas samī'ul 'alīm.",
+    terjemah:"Dengan Nama Allah, Yang dengan Nama-Nya tidak ada sesuatu pun yang memudharatkan di bumi maupun di langit. Dia-lah Yang Maha Mendengar lagi Maha Mengetahui.",
+    dibaca:3,
+    faedah:"Barangsiapa membacanya 3× pagi dan sore, tidak ada sesuatu pun yang membahayakannya. (HR. At-Tirmidzi, shahih)"
+  },
+  {
+    no:11, nama:"Doa Keridhaan",
+    arab:"رَضِيْتُ بِاللّٰهِ رَبًّا، وَبِاْلإِسْلَامِ دِيْنًا، وَبِمُحَمَّدٍ صَلَّى اللّٰهُ عَلَيْهِ وَسَلَّمَ نَبِيًّا",
+    latin:"Raḍītu billāhi rabbā, wabil islāmi dīnā, wa bi Muḥammadin ṣallallāhu 'alayhi wa sallama nabiyyā.",
+    terjemah:"Aku ridha Allah sebagai Rabbku, Islam sebagai agamaku, dan Muhammad ﷺ sebagai Nabiku.",
+    dibaca:3,
+    faedah:"Barangsiapa membacanya 3× pagi dan sore, Allah memberikan keridhaan-Nya kepadanya pada hari Kiamat. (HR. Ahmad, hasan)"
+  },
+  {
+    no:12, nama:"Ya Hayyu Ya Qayyum",
+    arab:"يَا حَيُّ يَا قَيُّوْمُ بِرَحْمَتِكَ أَسْتَغِيْثُ، وَأَصْلِحْ لِيْ شَأْنِيْ كُلَّهُ، وَلَا تَكِلْنِيْ إِلَى نَفْسِيْ طَرْفَةَ عَيْنٍ",
+    latin:"Yā ḥayyu yā qayyūmu biraḥmatika astagīts, wa aṣliḥ lī sya'nī kullahu, wa lā takilnī ilā nafsī ṭarfata 'ayn.",
+    terjemah:"Wahai Rabb Yang Maha Hidup, wahai Rabb Yang Berdiri Sendiri, dengan rahmat-Mu aku minta pertolongan. Perbaikilah segala urusanku dan jangan serahkan kepadaku walaupun sekejap mata.",
+    dibaca:1, faedah:""
+  },
+  {
+    no:13, nama:"Tasbih Tahmid",
+    arab:"سُبْحَانَ اللّٰهِ وَبِحَمْدِهِ",
+    latin:"Subḥānallāhi wa biḥamdih.",
+    terjemah:"Maha suci Allah, aku memuji-Nya.",
+    dibaca:100,
+    faedah:"Barangsiapa membacanya 100× pagi dan sore, tidak ada yang datang pada hari kiamat dengan yang lebih baik kecuali yang membaca seperti itu atau lebih. (HR. Muslim)"
+  },
+  {
+    no:14, nama:"Tahlil",
+    arab:"لَا إِلٰهَ إِلَّا اللّٰهُ وَحْدَهُ لَا شَرِيْكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيْرُ",
+    latin:"Lā ilāha illallāhu waḥdahū lā syarīka lah, lahul mulku walahul ḥamd, wa huwa 'alā kulli syai'in qadīr.",
+    terjemah:"Tidak ada ilah yang berhak disembah selain Allah semata, tidak ada sekutu bagi-Nya. Hanya milik-Nya kerajaan dan segala puji hanya bagi-Nya. Dia-lah yang berkuasa atas segala sesuatu.",
+    dibaca:10,
+    faedah:"Barangsiapa membacanya 10× pagi hari, dituliskan baginya 10 kebaikan, dihapus 10 keburukan, dan mendapat perlindungan dari syaitan. (HR. Muslim)"
+  },
+  {
+    no:15, nama:"Istighfar",
+    arab:"أَسْتَغْفِرُ اللّٰهَ وَأَتُوْبُ إِلَيْهِ",
+    latin:"Astaghfirullāha wa atūbu ilaih.",
+    terjemah:"Aku memohon ampun kepada Allah dan bertobat kepada-Nya.",
+    dibaca:100,
+    faedah:"Nabi ﷺ beristighfar kepada Allah dalam sehari 100 kali. (HR. Muslim)"
+  },
+  {
+    no:16, nama:"Shalawat Nabi",
+    arab:"اَللّٰهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ",
+    latin:"Allāhumma ṣalli wa sallim 'alā nabiyyinā Muḥammad.",
+    terjemah:"Ya Allah, limpahkanlah shalawat dan salam kepada Nabi kami, Muhammad ﷺ.",
+    dibaca:10,
+    faedah:"Barangsiapa bershalawat kepadaku 10× di pagi hari dan 10× di sore hari, ia mendapatkan syafa'atku pada hari kiamat. (HR. At-Thabrani)"
+  },
+];
+
+const DZIKIR_PETANG = [
+  ...DZIKIR_PAGI.slice(0,4),
+  {
+    no:5, nama:"Doa Petang",
+    arab:"أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلّٰهِ، وَالْحَمْدُ لِلّٰهِ، لَا إِلٰهَ إِلَّا اللّٰهُ وَحْدَهُ لَا شَرِيْكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيْرٌ. رَبِّ أَسْأَلُكَ خَيْرَ مَا فِيْ هٰذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوْذُ بِكَ مِنْ شَرِّ مَا فِيْ هٰذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا",
+    latin:"Amsaynā wa amsal mulku lillāh, walḥamdu lillāh, lā ilāha illallāhu waḥdahū lā syarīka lah, lahul mulku walahul ḥamd, wa huwa 'alā kulli syai'in qadīr. Rabbi as'aluka khayra mā fī hādzihil laylati wa khayra mā ba'dahā, wa a'ūdzu bika min syarri mā fī hādzihil laylati wa syarri mā ba'dahā.",
+    terjemah:"Kami telah memasuki waktu sore dan kerajaan hanya milik Allah. Segala puji bagi Allah. Tidak ada ilah yang berhak disembah kecuali Allah semata. Ya Rabbku, aku memohon kebaikan malam ini dan kebaikan sesudahnya, dan aku berlindung kepada-Mu dari kejelekan malam ini dan kejelekan sesudahnya.",
+    dibaca:1, faedah:""
+  },
+  {
+    no:6, nama:"Doa Berserah Diri (Petang)",
+    arab:"اَللّٰهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوْتُ، وَإِلَيْكَ الْمَصِيْرُ",
+    latin:"Allāhumma bika amsaynā, wa bika aṣbaḥnā, wa bika naḥyā, wa bika namūtu, wa ilaikal maṣīr.",
+    terjemah:"Ya Allah, dengan rahmat dan pertolongan-Mu kami memasuki waktu sore, dan dengan rahmat dan pertolongan-Mu kami memasuki waktu pagi. Dengan rahmat dan pertolongan-Mu kami hidup dan dengan kehendak-Mu kami mati. Dan kepada-Mu tempat kembali.",
+    dibaca:1, faedah:""
+  },
+  ...DZIKIR_PAGI.slice(6,15),
+  {
+    no:16, nama:"Perlindungan Petang",
+    arab:"أَعُوْذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ",
+    latin:"A'ūdzu bikalimātillāhit tāmmāti min syarri mā khalaq.",
+    terjemah:"Aku berlindung dengan kalimat-kalimat Allah yang sempurna dari kejahatan apa yang Dia ciptakan.",
+    dibaca:3,
+    faedah:"Barangsiapa membacanya 3× ketika petang, tidak ada racun atau sengatan yang membahayakannya malam itu. (HR. Muslim)"
+  },
+  DZIKIR_PAGI[15],
+];
+
 const formatWaktu = (ts) => {
   if (!ts) return "";
   const d = new Date(ts), now = new Date();
@@ -1311,6 +1466,216 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
   );
 }
 
+// ═══════════════════════ MODE BACA DZIKIR ════════════════════════════════════
+
+function ModeBacaDzikir({ data, judul, onTutup }) {
+  const [idx, setIdx]             = useState(0);
+  const [counter, setCounter]     = useState({});   // { no: count }
+  const [selesai, setSelesai]     = useState([]);   // [no, ...]
+  const audioRef                  = useRef(null);
+  const item                      = data[idx];
+  const isSelesai                 = selesai.includes(item.no);
+  const count                     = counter[item.no] || 0;
+  const semua                     = selesai.length === data.length;
+
+  const bunyiTone = (freq = 660, dur = 0.12) => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.3, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+      o.start(ctx.currentTime); o.stop(ctx.currentTime + dur);
+      setTimeout(() => ctx.close(), 500);
+    } catch {}
+  };
+
+  const tap = () => {
+    if (isSelesai) return;
+    const next = count + 1;
+    setCounter(p => ({ ...p, [item.no]: next }));
+    if (next >= item.dibaca) {
+      setSelesai(p => [...p, item.no]);
+      bunyiTone(880, 0.18);
+      navigator.vibrate?.([80, 40, 80]);
+      // Auto-advance setelah 800ms
+      setTimeout(() => {
+        if (idx < data.length - 1) setIdx(i => i + 1);
+      }, 900);
+    } else {
+      bunyiTone(440, 0.07);
+      navigator.vibrate?.(30);
+    }
+  };
+
+  const prev = () => idx > 0 && setIdx(i => i - 1);
+  const next = () => idx < data.length - 1 && setIdx(i => i + 1);
+
+  // Layar selesai semua
+  if (semua) return (
+    <div style={{
+      position: "fixed", inset: 0, background: "#050e00", zIndex: 9999,
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      padding: 32,
+    }}>
+      <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
+      <div style={{ fontSize: 24, fontWeight: 900, color: "#34c776", marginBottom: 8 }}>Alhamdulillah!</div>
+      <div style={{ fontSize: 15, color: "#aaa", textAlign: "center", marginBottom: 32, lineHeight: 1.8 }}>
+        {judul} selesai dibaca.{"\n"}Semoga Allah menerima amal ibadahmu.
+      </div>
+      <button onClick={onTutup} style={{
+        background: "#34c776", color: "#000", fontWeight: 900, fontSize: 15,
+        border: "none", borderRadius: 12, padding: "14px 36px", cursor: "pointer",
+      }}>Selesai</button>
+    </div>
+  );
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "#080808", zIndex: 9999,
+      display: "flex", flexDirection: "column", overflowY: "auto",
+    }}>
+      {/* HEADER */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "16px 18px", borderBottom: "1px solid #1a1a1a",
+        background: "#0a0a0a", flexShrink: 0,
+      }}>
+        <button onClick={onTutup} style={{
+          background: "#1a1a1a", border: "none", borderRadius: 8, padding: "6px 12px",
+          color: "#888", fontSize: 13, cursor: "pointer",
+        }}>✕ Tutup</button>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#f5c842" }}>{judul}</div>
+        <div style={{ fontSize: 13, color: "#555" }}>{idx + 1}/{data.length}</div>
+      </div>
+
+      {/* DOTS PROGRESS */}
+      <div style={{
+        display: "flex", gap: 5, padding: "10px 18px", overflowX: "auto", flexShrink: 0,
+        scrollbarWidth: "none",
+      }}>
+        {data.map((d, i) => (
+          <button key={d.no} onClick={() => setIdx(i)} style={{
+            width: selesai.includes(d.no) ? 12 : (i === idx ? 14 : 8),
+            height: selesai.includes(d.no) ? 12 : (i === idx ? 14 : 8),
+            borderRadius: "50%", flexShrink: 0, border: "none", cursor: "pointer",
+            background: selesai.includes(d.no) ? "#34c776" : i === idx ? "#f5c842" : "#2a2a2a",
+            transition: "all .2s",
+          }} />
+        ))}
+      </div>
+
+      {/* KARTU UTAMA */}
+      <div style={{ flex: 1, padding: "16px 18px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* Nama dzikir */}
+        <div style={{ textAlign: "center" }}>
+          <span style={{
+            background: isSelesai ? "#0a2a00" : "#1a1400",
+            border: `1px solid ${isSelesai ? "#34c776" : "#3a2800"}`,
+            borderRadius: 20, padding: "4px 14px", fontSize: 12,
+            color: isSelesai ? "#34c776" : "#f5c842", fontWeight: 700,
+          }}>
+            {isSelesai ? "✅ Selesai" : `${item.no}. ${item.nama}`}
+          </span>
+        </div>
+
+        {/* Arabic */}
+        <div style={{
+          background: "#0e0e0e", border: "1px solid #2a2000", borderRadius: 14,
+          padding: "20px 18px", textAlign: "right",
+        }}>
+          <div style={{
+            fontFamily: "'Amiri', 'Arial', serif", fontSize: 26, lineHeight: 2.2,
+            color: "#f5e9c4", direction: "rtl", wordBreak: "break-word",
+          }}>
+            {item.arab}
+          </div>
+        </div>
+
+        {/* Latin */}
+        <div style={{
+          fontSize: 13, color: "#b8a87a", lineHeight: 1.9,
+          fontStyle: "italic", textAlign: "center",
+        }}>
+          {item.latin}
+        </div>
+
+        {/* Terjemah */}
+        <div style={{
+          background: "#0c0c0c", borderRadius: 12, padding: "14px 16px",
+          fontSize: 13, color: "#ccc", lineHeight: 1.8,
+        }}>
+          {item.terjemah}
+        </div>
+
+        {/* Faedah */}
+        {item.faedah ? (
+          <div style={{
+            background: "#0e0e1a", border: "1px solid #1a1a3a", borderRadius: 12,
+            padding: "12px 14px", fontSize: 12, color: "#9999cc", lineHeight: 1.7,
+          }}>
+            📖 {item.faedah}
+          </div>
+        ) : null}
+
+        {/* COUNTER / TAP */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          {item.dibaca > 1 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{
+                fontSize: 32, fontWeight: 900,
+                color: isSelesai ? "#34c776" : "#f5c842", fontFamily: "monospace",
+              }}>
+                {count}
+              </div>
+              <div style={{ fontSize: 16, color: "#444" }}>/</div>
+              <div style={{ fontSize: 22, color: "#555", fontFamily: "monospace" }}>
+                {item.dibaca}×
+              </div>
+            </div>
+          )}
+
+          {/* Tombol TAP */}
+          {!isSelesai ? (
+            <button onPointerDown={tap} style={{
+              background: "#f5c842", color: "#000", fontWeight: 900,
+              fontSize: 16, border: "none", borderRadius: 60,
+              padding: item.dibaca === 1 ? "14px 56px" : "14px 44px",
+              cursor: "pointer", userSelect: "none", WebkitUserSelect: "none",
+              boxShadow: "0 4px 20px #f5c84255",
+              transition: "transform .08s",
+            }}>
+              {item.dibaca === 1 ? "Selesai Dibaca ✓" : "TAP"}
+            </button>
+          ) : (
+            <div style={{ fontSize: 22, color: "#34c776", fontWeight: 900 }}>✅ Selesai</div>
+          )}
+        </div>
+      </div>
+
+      {/* NAVIGASI PREV / NEXT */}
+      <div style={{
+        display: "flex", gap: 12, padding: "14px 18px 28px",
+        borderTop: "1px solid #141414", flexShrink: 0, background: "#0a0a0a",
+      }}>
+        <button onClick={prev} disabled={idx === 0} style={{
+          flex: 1, padding: "12px 0", borderRadius: 10, border: "none",
+          background: idx === 0 ? "#111" : "#1e1e1e", color: idx === 0 ? "#333" : "#bbb",
+          fontSize: 14, fontWeight: 700, cursor: idx === 0 ? "not-allowed" : "pointer",
+        }}>← Sebelumnya</button>
+        <button onClick={next} disabled={idx === data.length - 1} style={{
+          flex: 1, padding: "12px 0", borderRadius: 10, border: "none",
+          background: idx === data.length - 1 ? "#111" : "#1e1e1e",
+          color: idx === data.length - 1 ? "#333" : "#f5c842",
+          fontSize: 14, fontWeight: 700, cursor: idx === data.length - 1 ? "not-allowed" : "pointer",
+        }}>Berikutnya →</button>
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════ HALAMAN DZIKIR ══════════════════════════════════════
 
 function HalamanDzikir({ catatan, onBukaCatatan, simpanCatatan }) {
@@ -1321,6 +1686,7 @@ function HalamanDzikir({ catatan, onBukaCatatan, simpanCatatan }) {
     () => localStorage.getItem(NOTIF_DZIKIR_KEY) === "true"
   );
   const [jamSekarang, setJamSekarang] = useState(new Date());
+  const [modeBaca, setModeBaca]       = useState(null); // { data, judul }
 
   useEffect(() => {
     const t = setInterval(() => setJamSekarang(new Date()), 60000);
@@ -1356,6 +1722,10 @@ function HalamanDzikir({ catatan, onBukaCatatan, simpanCatatan }) {
 
   const formatJam = (d) =>
     d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+
+  if (modeBaca) return (
+    <ModeBacaDzikir data={modeBaca.data} judul={modeBaca.judul} onTutup={() => setModeBaca(null)} />
+  );
 
   return (
     <div style={{ paddingBottom: 90 }}>
@@ -1396,30 +1766,24 @@ function HalamanDzikir({ catatan, onBukaCatatan, simpanCatatan }) {
       {/* TOMBOL MULAI CEPAT */}
       <div style={{ padding: "14px 16px", display: "flex", gap: 10 }}>
         {[
-          { label: "Mulai Dzikir Pagi", ikon: "🌅", kunci: "Pagi", warna: "#f5c842", aktif: waktupagi },
-          { label: "Mulai Dzikir Petang", ikon: "🌇", kunci: "Petang", warna: "#e88530", aktif: waktupetang },
-        ].map(b => {
-          const target = catatan.find(n => !n.arsip && !n.hapus && n.judul?.includes("Dzikir") && n.judul?.includes(b.kunci));
-          return (
-            <button key={b.kunci} onClick={() => target && onBukaCatatan(target)}
-              disabled={!target}
-              style={{
-                flex: 1, padding: "14px 10px", borderRadius: 12, cursor: target ? "pointer" : "not-allowed",
-                border: `2px solid ${b.aktif ? b.warna : "#2a2a2a"}`,
-                background: b.aktif ? b.warna + "18" : "#111",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-              }}>
-              <span style={{ fontSize: 26 }}>{b.ikon}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: b.aktif ? b.warna : "#555" }}>{b.label}</span>
-              {target && (() => {
-                const items = target.item || [];
-                const done  = items.filter(i => i.cek).length;
-                return <span style={{ fontSize: 11, color: "#444" }}>{done}/{items.length} selesai</span>;
-              })()}
-              {!target && <span style={{ fontSize: 10, color: "#333" }}>Buat dari template</span>}
-            </button>
-          );
-        })}
+          { label: "Dzikir Pagi", ikon: "🌅", data: DZIKIR_PAGI, warna: "#f5c842", aktif: waktupagi },
+          { label: "Dzikir Petang", ikon: "🌇", data: DZIKIR_PETANG, warna: "#e88530", aktif: waktupetang },
+        ].map(b => (
+          <button key={b.label}
+            onClick={() => setModeBaca({ data: b.data, judul: b.label })}
+            style={{
+              flex: 1, padding: "14px 10px", borderRadius: 12, cursor: "pointer",
+              border: `2px solid ${b.aktif ? b.warna : "#2a2a2a"}`,
+              background: b.aktif ? b.warna + "18" : "#111",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+            }}>
+            <span style={{ fontSize: 26 }}>{b.ikon}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: b.aktif ? b.warna : "#aaa" }}>
+              Mulai {b.label}
+            </span>
+            <span style={{ fontSize: 11, color: "#555" }}>{b.data.length} dzikir</span>
+          </button>
+        ))}
       </div>
 
       {/* DAFTAR CATATAN DZIKIR */}
