@@ -1,8 +1,12 @@
 const midtransClient = require("midtrans-client");
 
+// Harga tunggal: Pro seumur hidup (lifetime) Rp 25.000.
+const HARGA_PRO = 25000;
 const PLAN_AMOUNT = {
-  tahunan: 99000,
-  bulanan: 24000,
+  seumur: HARGA_PRO,
+  // Alias lama agar order yang sudah terlanjur terkirim tetap valid.
+  tahunan: HARGA_PRO,
+  bulanan: HARGA_PRO,
 };
 
 exports.handler = async (event) => {
@@ -25,7 +29,7 @@ exports.handler = async (event) => {
 
   const amount = PLAN_AMOUNT[plan];
   if (!amount) {
-    return { statusCode: 400, body: JSON.stringify({ error: "plan tidak valid, gunakan 'tahunan' atau 'bulanan'" }) };
+    return { statusCode: 400, body: JSON.stringify({ error: "plan tidak valid, gunakan 'seumur'" }) };
   }
 
   const serverKey = process.env.MIDTRANS_SERVER_KEY;
@@ -48,7 +52,7 @@ exports.handler = async (event) => {
         id: plan,
         price: amount,
         quantity: 1,
-        name: plan === "tahunan" ? "KapurPad Pro — Tahunan" : "KapurPad Pro — Bulanan",
+        name: "KapurPad Pro — Seumur Hidup",
       },
     ],
     credit_card: { secure: true },

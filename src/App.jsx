@@ -94,7 +94,7 @@ const TEMA = [
 const STORAGE_KEY   = "kapurpad_v1";
 const SETTINGS_KEY  = "kapurpad_settings";
 const FOLDERS_KEY   = "kapurpad_folders";
-const AI_ENDPOINT   = "/.netlify/functions/ai-gemini";
+const AI_ENDPOINT   = "/.netlify/functions/ai-asisten";
 const buatId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 
 const FOLDER_DEFAULT = [
@@ -365,10 +365,8 @@ const cekStatusPro = () => {
 };
 
 const aktifkanPro = (plan) => {
-  let durasi;
-  if (plan === "owner")        durasi = 100 * 365 * 24 * 60 * 60 * 1000;
-  else if (plan === "tahunan") durasi = 365 * 24 * 60 * 60 * 1000;
-  else                         durasi = 30  * 24 * 60 * 60 * 1000;
+  // Semua pembelian sekarang lifetime (seumur hidup). Owner & alias lama juga lifetime.
+  const durasi = 100 * 365 * 24 * 60 * 60 * 1000;
   localStorage.setItem(PRO_KEY, "true");
   localStorage.setItem(PRO_EXPIRY_KEY, String(Date.now() + durasi));
 };
@@ -461,7 +459,7 @@ function GatePro({ pesan, onUpgrade, onTutup }) {
           width:"100%",padding:"14px 0",background:"linear-gradient(135deg,#f5c842,#e8a030)",
           border:"none",borderRadius:12,color:"#000",fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:10,
         }}>
-          Upgrade Pro — Rp 99.000/tahun
+          Upgrade Pro — Rp 25.000 selamanya
         </button>
         <div style={{fontSize:11,color:"#555",marginBottom:16}}>Pembayaran aman via Midtrans · QRIS, GoPay, Transfer Bank</div>
         <button onClick={onTutup} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:13}}>
@@ -1021,7 +1019,6 @@ function Seksi({ judul, children }) {
 // ═══════════════════════ MODAL PREMIUM ═══════════════════════════════════════
 
 function ModalPremium({ onTutup, onProAktif }) {
-  const [planDipilih, setPlanDipilih] = useState("tahunan");
   const [loading, setLoading] = useState(false);
   const [pesanError, setPesanError] = useState("");
 
@@ -1056,23 +1053,21 @@ function ModalPremium({ onTutup, onProAktif }) {
     setPesanError("");
     setLoading(true);
     try {
-      const orderId = planDipilih === "tahunan"
-        ? `KAPURPAD-YEAR-${Date.now()}`
-        : `KAPURPAD-MONTH-${Date.now()}`;
-      const harga = planDipilih === "tahunan" ? 99000 : 24000;
+      const orderId = `KAPURPAD-LIFE-${Date.now()}`;
+      const harga = 25000;
 
       // Minta snap token dari backend
       const res = await fetch(PAYMENT_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_id: orderId, amount: harga, plan: planDipilih }),
+        body: JSON.stringify({ order_id: orderId, amount: harga, plan: "seumur" }),
       });
       if (!res.ok) throw new Error("Gagal menghubungi server pembayaran.");
       const { token } = await res.json();
 
       window.snap.pay(token, {
         onSuccess: () => {
-          aktifkanPro(planDipilih);
+          aktifkanPro("seumur");
           onProAktif();
           onTutup();
         },
@@ -1109,22 +1104,14 @@ function ModalPremium({ onTutup, onProAktif }) {
           </div>
           <button onClick={onTutup} style={{background:"#1e1e1e",border:"none",borderRadius:"50%",width:32,height:32,color:"#888",cursor:"pointer",fontSize:18}}>×</button>
         </div>
-        <div style={{display:"flex",gap:12,marginBottom:18}}>
-          {[
-            {id:"tahunan", label:"Tahunan", harga:"Rp 99.000 / tahun", badge:"Hemat 66%"},
-            {id:"bulanan",  label:"Bulanan",  harga:"Rp 24.000 / bulan",  badge:null},
-          ].map(p=>(
-            <div key={p.id} onClick={()=>setPlanDipilih(p.id)}
-              style={{flex:1,border:`2px solid ${planDipilih===p.id?"#f5c842":"#222"}`,borderRadius:12,padding:14,background:planDipilih===p.id?"#191300":"#111",position:"relative",cursor:"pointer",transition:"all .15s"}}>
-              {p.badge&&<div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:"#f5c842",color:"#000",fontSize:10,fontWeight:800,padding:"2px 8px",borderRadius:10,whiteSpace:"nowrap"}}>{p.badge}</div>}
-              <div style={{color:"#ece8e0",fontWeight:700,fontSize:15,marginBottom:4}}>{p.label}</div>
-              <div style={{color:planDipilih===p.id?"#f5c842":"#666",fontSize:13}}>{p.harga}</div>
-            </div>
-          ))}
+        <div style={{border:"2px solid #f5c842",borderRadius:14,padding:"18px 16px",background:"#191300",textAlign:"center",marginBottom:18,position:"relative"}}>
+          <div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:"#f5c842",color:"#000",fontSize:10,fontWeight:800,padding:"2px 10px",borderRadius:10,whiteSpace:"nowrap"}}>BAYAR SEKALI · SELAMANYA</div>
+          <div style={{color:"#f5c842",fontWeight:900,fontSize:32,letterSpacing:-1}}>Rp 25.000</div>
+          <div style={{color:"#998",fontSize:13,marginTop:2}}>Sekali bayar — Pro seumur hidup, tanpa langganan</div>
         </div>
         <button onClick={handleBayar} disabled={loading}
           style={{width:"100%",padding:14,background:loading?"#5a4800":"linear-gradient(135deg,#f5c842,#e8a030)",border:"none",borderRadius:12,color:"#000",fontWeight:800,fontSize:16,cursor:loading?"not-allowed":"pointer",marginBottom:8,opacity:loading?0.7:1,transition:"all .2s"}}>
-          {loading ? "Memproses…" : "Beli Pro Sekarang"}
+          {loading ? "Memproses…" : "Beli Pro Sekarang — Rp 25.000"}
         </button>
         {pesanError && (
           <div style={{textAlign:"center",fontSize:12,color:"#e84040",marginBottom:8,padding:"6px 12px",background:"#1a0000",borderRadius:8,border:"1px solid #3a0000"}}>
@@ -1303,6 +1290,7 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
   const [aiLoading,         setAiLoading]         = useState(false);
   const [aiPerintah,        setAiPerintah]        = useState("");
   const [aiMode,            setAiMode]            = useState(null); // "rapikan"|"buatDari"
+  const [pratinjau,         setPratinjau]         = useState(false); // mode lihat hasil markdown
   const dragIdx   = useRef(null);
   const timerRef  = useRef(null);
   const audioCtxRef = useRef(null);
@@ -1631,8 +1619,22 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
           {!isPro && (
             <span style={{fontSize:10,color:"#f5c842",marginLeft:4,flexShrink:0}}>🔒 Pro</span>
           )}
+          {/* Toggle Tulis / Pratinjau */}
+          <button title={pratinjau?"Kembali menulis":"Lihat hasil format"} onClick={()=>{
+              if(!isPro){onGatePro?.("Format Teks (Markdown) tersedia untuk pengguna Pro ✏️");return;}
+              setPratinjau(p=>!p);
+            }}
+            style={{
+              flexShrink:0,marginLeft:6,padding:"3px 10px",borderRadius:6,
+              border:`1px solid ${pratinjau?"#f5c842":isTerang?"#d0ccc6":"#2a2a2a"}`,
+              background:pratinjau?(isTerang?"#fffbee":"#1a1400"):(isTerang?"#fff":"#1a1a1a"),
+              color:pratinjau?"#f5c842":isTerang?"#444":"#aaa",
+              fontSize:11,fontWeight:700,cursor:"pointer",
+            }}>
+            {pratinjau?"✍️ Tulis":"👁 Pratinjau"}
+          </button>
           {/* AI Button */}
-          <div style={{marginLeft:"auto",position:"relative",flexShrink:0}}>
+          <div style={{marginLeft:8,position:"relative",flexShrink:0}}>
             <button onClick={()=>{
               if(!isPro){onGatePro?.("Asisten AI Nulis tersedia untuk pengguna Pro ✨");return;}
               setAiMenu(!aiMenu);
@@ -1664,6 +1666,13 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
       {!modeFokus && (
         <div style={{flex:1,overflow:"auto",padding:16,background:edBg}}>
           {tipe==="teks" ? (
+            pratinjau ? (
+              <div style={{minHeight:"50vh",color:edItemColor,fontSize:settings?.ukuranFont||15,lineHeight:1.9}}>
+                {isi.trim()
+                  ? renderMarkdown(isi)
+                  : <span style={{color:edMuted}}>Belum ada isi untuk ditampilkan.</span>}
+              </div>
+            ) : (
             <>
               <textarea ref={textareaRef} value={isi} onChange={e=>setIsi(e.target.value)} placeholder="Tulis sesuatu…"
                 style={{width:"100%",minHeight:"50vh",background:"none",border:"none",outline:"none",
@@ -1671,6 +1680,7 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
                   boxSizing:"border-box",fontFamily:"inherit"}}/>
               {isi && <div style={{fontSize:11,color:edWordCount,textAlign:"right"}}>{jumlahKata} kata · {isi.length} karakter</div>}
             </>
+            )
           ) : (
             <div>
               {item.map((it,idx)=>{
