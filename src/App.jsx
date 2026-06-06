@@ -132,6 +132,16 @@ const renderMarkdown = (teks) => {
   });
 };
 
+// Ambil teks bersih dari konten editor (yang kini bisa berupa HTML)
+const stripHtml = (s) => {
+  if (!s) return "";
+  if (!s.includes("<")) return s;
+  if (typeof document === "undefined") return s.replace(/<[^>]*>/g, " ");
+  const d = document.createElement("div");
+  d.innerHTML = s;
+  return (d.textContent || d.innerText || "").trim();
+};
+
 const parseTarget = (teks) => {
   const m = teks.match(/(\d+)\s*[×x]/i);
   return m ? parseInt(m[1]) : null;
@@ -429,7 +439,7 @@ const jadwalkanNotif = (judul, waktu, isiPesan) => {
 const bagikanCatatan = async (catatan) => {
   const teks = catatan.tipe === "ceklis"
     ? `📋 ${catatan.judul}\n\n${(catatan.item||[]).map(i=>`${i.cek?"✅":"⬜"} ${i.teks}`).join("\n")}\n\n— Dikirim via KapurPad`
-    : `📝 ${catatan.judul}\n\n${catatan.isi}\n\n— Dikirim via KapurPad`;
+    : `📝 ${catatan.judul}\n\n${stripHtml(catatan.isi)}\n\n— Dikirim via KapurPad`;
 
   if (navigator.share) {
     try {
@@ -608,7 +618,7 @@ function KartuCatatan({ c, onClick, q, tema, t }) {
         </>
       ) : c.isi ? (
         <div style={{fontSize:13, color:isiCol, display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden"}}>
-          {sorot(c.isi)}
+          {sorot(stripHtml(c.isi))}
         </div>
       ) : null}
       <div style={{fontSize:11, color:metaCol, marginTop:6}}>{formatWaktu(c.diubah)}</div>
@@ -863,7 +873,7 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
   };
 
   return (
-    <div style={{position:"fixed", inset:0, background:"#080808", zIndex:200, overflowY:"auto"}}>
+    <div style={{position:"fixed", top:0, bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:480, background:"#080808", zIndex:200, overflowY:"auto", boxShadow:"0 0 0 100vmax rgba(0,0,0,0.55)"}}>
       {pinMode && (
         <ModalPin
           mode={pinMode}
@@ -1025,7 +1035,7 @@ function ModalPremium({ onTutup, onProAktif }) {
   const fitur = [
     {ikon:"📁",judul:"Folder & Kategori",      desc:"Kelompokkan catatan dalam folder berwarna — Kerja, Pribadi, Ibadah."},
     {ikon:"✏️",judul:"Format Teks (Markdown)", desc:"Tebal, miring, heading, bullet list, dan checklist langsung di editor."},
-    {ikon:"✨",judul:"Asisten AI Nulis",        desc:"Rapikan tulisan atau buat catatan dari perintah bebas pakai Gemini AI."},
+    {ikon:"✨",judul:"Asisten AI Nulis",        desc:"Rapikan tulisan atau buat catatan dari perintah bebas pakai AI."},
     {ikon:"💬",judul:"Tanya Catatanmu (AI)",   desc:"Tanya apa saja tentang catatanmu — AI jawab berdasarkan data kamu."},
     {ikon:"📊",judul:"Laporan Mingguan",        desc:"Bar chart 7 hari, streak, total ceklis selesai, dan top mood minggu ini."},
     {ikon:"🔔",judul:"Pengingat Berulang",      desc:"Atur pengingat Sekali, Harian, Mingguan, atau Bulanan."},
@@ -1290,11 +1300,10 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
   const [aiLoading,         setAiLoading]         = useState(false);
   const [aiPerintah,        setAiPerintah]        = useState("");
   const [aiMode,            setAiMode]            = useState(null); // "rapikan"|"buatDari"
-  const [pratinjau,         setPratinjau]         = useState(false); // mode lihat hasil markdown
   const dragIdx   = useRef(null);
   const timerRef  = useRef(null);
   const audioCtxRef = useRef(null);
-  const textareaRef = useRef(null);
+  const editorRef = useRef(null);   // contentEditable WYSIWYG
   const [tapAnim, setTapAnim] = useState(null);
 
   // Warna dinamis berdasarkan tema
@@ -1359,24 +1368,37 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
     dragIdx.current=idx; setItem(b);
   };
 
-  // Sisipkan markdown di posisi kursor textarea
-  const sisipMarkdown = (prefix, suffix="") => {
-    if (!isPro) { onGatePro?.("Format Teks (Markdown) tersedia untuk pengguna Pro ✏️"); return; }
-    const el = textareaRef.current;
-    if (!el) { setIsi(p => prefix + p + suffix); return; }
-    const start = el.selectionStart;
-    const end   = el.selectionEnd;
-    const sel   = isi.slice(start, end);
-    const baru  = isi.slice(0, start) + prefix + sel + suffix + isi.slice(end);
-    setIsi(baru);
-    setTimeout(() => {
-      el.focus();
-      el.selectionStart = start + prefix.length;
-      el.selectionEnd   = start + prefix.length + sel.length;
-    }, 0);
+  // Isi konten ke contentEditable (HTML kalau ada tag, kalau tidak teks polos)
+  const setKontenEditor = (el, v) => {
+    if (!el) return;
+    v = v || "";
+    if (v.includes("<") && v.includes(">")) el.innerHTML = v;
+    else el.innerText = v;
   };
 
-  // Panggil Gemini AI
+  // Isi konten awal ke editor saat masuk mode teks / fokus (bukan tiap ketik → kursor tak loncat)
+  useEffect(() => {
+    const el = editorRef.current;
+    if (el && tipe === "teks") {
+      setKontenEditor(el, isi);
+      if (modeFokus) setTimeout(() => el.focus(), 0);
+    }
+    // sengaja tidak depend pada `isi`
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipe, modeFokus]);
+
+  // Format langsung (WYSIWYG) — hasilnya tampil seketika, bukan simbol markdown
+  const format = (cmd, val) => {
+    if (!isPro) { onGatePro?.("Format Teks tersedia untuk pengguna Pro ✏️"); return; }
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus();
+    try { document.execCommand("styleWithCSS", false, false); } catch {}
+    document.execCommand(cmd, false, val);
+    setIsi(el.innerHTML);
+  };
+
+  // Panggil Asisten AI
   const panggilAI = async (mode, teksMasukan) => {
     if (!isPro) { onGatePro?.("Asisten AI Nulis tersedia untuk pengguna Pro ✨"); return; }
     setAiLoading(true);
@@ -1384,10 +1406,14 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
       const res = await fetch(AI_ENDPOINT, {
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ mode, teks: teksMasukan }),
+        body: JSON.stringify({ mode, teks: stripHtml(teksMasukan) }),
       });
       const data = await res.json();
-      if (data.hasil) { setIsi(data.hasil); tampilNotif("✨ AI selesai!"); }
+      if (data.hasil) {
+        setIsi(data.hasil);
+        setKontenEditor(editorRef.current, data.hasil);
+        tampilNotif("✨ AI selesai!");
+      }
       else tampilNotif("❌ " + (data.error || "AI gagal"));
     } catch { tampilNotif("❌ Tidak dapat menghubungi AI"); }
     setAiLoading(false); setAiMenu(false); setAiMode(null); setAiPerintah("");
@@ -1406,7 +1432,7 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
     };
     if (pengingat) {
       clearTimeout(timerRef.current);
-      timerRef.current = jadwalkanNotif(c.judul, pengingat, c.isi?.slice(0,80));
+      timerRef.current = jadwalkanNotif(c.judul, pengingat, stripHtml(c.isi).slice(0,80));
     }
     onSimpan(c);
   }, [judul,isi,item,tipe,warna,mood,pengingat,pengingatBerulang,folderDipilih,catatan,onSimpan]);
@@ -1417,16 +1443,17 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
   };
 
   const salinTeks = async () => {
-    const teks = tipe==="ceklis" ? item.map(i=>`${i.cek?"✅":"⬜"} ${i.teks}`).join("\n") : isi;
+    const teks = tipe==="ceklis" ? item.map(i=>`${i.cek?"✅":"⬜"} ${i.teks}`).join("\n") : stripHtml(isi);
     try { await navigator.clipboard.writeText(teks); tampilNotif("📋 Disalin!"); }
     catch { tampilNotif("Gagal menyalin"); }
   };
 
-  const jumlahKata = isi.trim().split(/\s+/).filter(Boolean).length;
+  const teksBersih = stripHtml(isi);
+  const jumlahKata = teksBersih.trim().split(/\s+/).filter(Boolean).length;
   const folderAktif = (folders||[]).find(f=>f.id===folderDipilih);
 
   return (
-    <div style={{position:"fixed",inset:0,background:edBg,zIndex:100,display:"flex",flexDirection:"column",fontSize:settings?.ukuranFont||15}}>
+    <div style={{position:"fixed",top:0,bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:edBg,zIndex:100,display:"flex",flexDirection:"column",fontSize:settings?.ukuranFont||15,boxShadow:"0 0 0 100vmax rgba(0,0,0,0.55)"}}>
       {notif && (
         <div style={{position:"absolute",top:70,left:"50%",transform:"translateX(-50%)",background:"#1c1c1c",border:"1px solid #2e2e2e",borderRadius:20,padding:"8px 18px",color:"#ddd",fontSize:13,zIndex:999,whiteSpace:"nowrap",pointerEvents:"none"}}>
           {notif}
@@ -1530,11 +1557,13 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
             <span style={{fontSize:13,color:"#888",fontFamily:"Georgia,serif",fontStyle:"italic"}}>{judul||"Tanpa judul"}</span>
             <button onClick={()=>setModeFokus(false)} style={{background:"none",border:"none",color:"#888",cursor:"pointer",fontSize:12}}>Keluar Fokus ×</button>
           </div>
-          <textarea value={isi} onChange={e=>setIsi(e.target.value)} autoFocus
-            style={{flex:1,background:"none",border:"none",outline:"none",color:"#ccc8c0",fontSize:17,lineHeight:2.1,padding:"0 40px 40px",resize:"none",fontFamily:"Georgia,serif"}}
-            placeholder="Tulis dengan tenang…"/>
+          <div
+            ref={editorRef}
+            contentEditable suppressContentEditableWarning
+            onInput={e=>setIsi(e.currentTarget.innerHTML)}
+            style={{flex:1,overflowY:"auto",background:"none",border:"none",outline:"none",color:"#ccc8c0",fontSize:17,lineHeight:2.1,padding:"0 40px 40px",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"Georgia,serif"}}/>
           <div style={{padding:"10px 40px",opacity:.25,fontSize:12,color:"#888",display:"flex",justifyContent:"space-between"}}>
-            <span>{jumlahKata} kata</span><span>{isi.length} karakter</span>
+            <span>{jumlahKata} kata</span><span>{teksBersih.length} karakter</span>
           </div>
         </div>
       )}
@@ -1599,14 +1628,14 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
       {tipe==="teks" && !modeFokus && (
         <div style={{display:"flex",gap:4,padding:"6px 12px",background:isTerang?"#ebe8e3":"#101010",borderBottom:`1px solid ${edBorder}`,overflowX:"auto",scrollbarWidth:"none",alignItems:"center",flexShrink:0}}>
           {[
-            {lab:"B",  title:"Tebal",     fn:()=>sisipMarkdown("**","**")},
-            {lab:"I",  title:"Miring",    fn:()=>sisipMarkdown("*","*")},
-            {lab:"H1", title:"Heading 1", fn:()=>sisipMarkdown("# ")},
-            {lab:"H2", title:"Heading 2", fn:()=>sisipMarkdown("## ")},
-            {lab:"• List",  title:"Daftar",    fn:()=>sisipMarkdown("- ")},
-            {lab:"☑ Todo",  title:"Checklist", fn:()=>sisipMarkdown("[ ] ")},
+            {lab:"B",  title:"Tebal",     fn:()=>format("bold")},
+            {lab:"I",  title:"Miring",    fn:()=>format("italic")},
+            {lab:"H1", title:"Heading 1", fn:()=>format("formatBlock","<h1>")},
+            {lab:"H2", title:"Heading 2", fn:()=>format("formatBlock","<h2>")},
+            {lab:"• List",  title:"Daftar",    fn:()=>format("insertUnorderedList")},
+            {lab:"☑ Todo",  title:"Checklist", fn:()=>format("insertText","☐ ")},
           ].map(btn=>(
-            <button key={btn.lab} title={btn.title} onClick={btn.fn}
+            <button key={btn.lab} title={btn.title} onMouseDown={e=>e.preventDefault()} onClick={btn.fn}
               style={{
                 flexShrink:0,padding:"3px 8px",borderRadius:6,border:`1px solid ${isTerang?"#d0ccc6":"#2a2a2a"}`,
                 background:isTerang?"#fff":"#1a1a1a",color:isTerang?"#444":"#aaa",
@@ -1619,20 +1648,6 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
           {!isPro && (
             <span style={{fontSize:10,color:"#f5c842",marginLeft:4,flexShrink:0}}>🔒 Pro</span>
           )}
-          {/* Toggle Tulis / Pratinjau */}
-          <button title={pratinjau?"Kembali menulis":"Lihat hasil format"} onClick={()=>{
-              if(!isPro){onGatePro?.("Format Teks (Markdown) tersedia untuk pengguna Pro ✏️");return;}
-              setPratinjau(p=>!p);
-            }}
-            style={{
-              flexShrink:0,marginLeft:6,padding:"3px 10px",borderRadius:6,
-              border:`1px solid ${pratinjau?"#f5c842":isTerang?"#d0ccc6":"#2a2a2a"}`,
-              background:pratinjau?(isTerang?"#fffbee":"#1a1400"):(isTerang?"#fff":"#1a1a1a"),
-              color:pratinjau?"#f5c842":isTerang?"#444":"#aaa",
-              fontSize:11,fontWeight:700,cursor:"pointer",
-            }}>
-            {pratinjau?"✍️ Tulis":"👁 Pratinjau"}
-          </button>
           {/* AI Button */}
           <div style={{marginLeft:8,position:"relative",flexShrink:0}}>
             <button onClick={()=>{
@@ -1666,21 +1681,23 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
       {!modeFokus && (
         <div style={{flex:1,overflow:"auto",padding:16,background:edBg}}>
           {tipe==="teks" ? (
-            pratinjau ? (
-              <div style={{minHeight:"50vh",color:edItemColor,fontSize:settings?.ukuranFont||15,lineHeight:1.9}}>
-                {isi.trim()
-                  ? renderMarkdown(isi)
-                  : <span style={{color:edMuted}}>Belum ada isi untuk ditampilkan.</span>}
-              </div>
-            ) : (
             <>
-              <textarea ref={textareaRef} value={isi} onChange={e=>setIsi(e.target.value)} placeholder="Tulis sesuatu…"
-                style={{width:"100%",minHeight:"50vh",background:"none",border:"none",outline:"none",
-                  color:edItemColor,fontSize:settings?.ukuranFont||15,lineHeight:1.9,resize:"none",
-                  boxSizing:"border-box",fontFamily:"inherit"}}/>
-              {isi && <div style={{fontSize:11,color:edWordCount,textAlign:"right"}}>{jumlahKata} kata · {isi.length} karakter</div>}
+              <style>{`.kp-editor:empty:before{content:attr(data-ph);color:${edMuted};pointer-events:none;}
+                .kp-editor h1{font-size:1.35em;font-weight:900;margin:8px 0 4px;}
+                .kp-editor h2{font-size:1.15em;font-weight:800;margin:6px 0 2px;}
+                .kp-editor ul{padding-left:22px;margin:4px 0;}`}</style>
+              <div
+                ref={editorRef}
+                className="kp-editor"
+                data-ph="Tulis sesuatu…"
+                contentEditable
+                suppressContentEditableWarning
+                onInput={e=>setIsi(e.currentTarget.innerHTML)}
+                style={{width:"100%",minHeight:"50vh",outline:"none",color:edItemColor,
+                  fontSize:settings?.ukuranFont||15,lineHeight:1.9,whiteSpace:"pre-wrap",
+                  wordBreak:"break-word",boxSizing:"border-box"}}/>
+              {teksBersih && <div style={{fontSize:11,color:edWordCount,textAlign:"right"}}>{jumlahKata} kata · {teksBersih.length} karakter</div>}
             </>
-            )
           ) : (
             <div>
               {item.map((it,idx)=>{
@@ -1804,27 +1821,45 @@ function ModeBacaDzikir({ data, judul, onTutup }) {
     }
   };
 
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd]     = useState(0);
-  const [slide, setSlide]           = useState(0);
+  // Geser dengan animasi terlihat (drag mengikuti jari + settle), bukan ganti tiba-tiba
+  const [dragX, setDragX]       = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startX = useRef(0);
+  const lebar  = useRef(0);
 
-  const prev = () => { if (idx > 0) { setSlide(1);  setTimeout(()=>{ setIdx(i=>i-1); setSlide(0); }, 130); } };
-  const next = () => { if (idx < data.length - 1) { setSlide(-1); setTimeout(()=>{ setIdx(i=>i+1); setSlide(0); }, 130); } };
+  // Tombol prev/next: kartu baru meluncur masuk dari sisi
+  const pindah = (arah) => {
+    if (arah > 0 && idx >= data.length - 1) { setDragX(0); return; }
+    if (arah < 0 && idx <= 0) { setDragX(0); return; }
+    const w = lebar.current || 320;
+    setDragging(true);
+    setDragX(arah > 0 ? w : -w);   // next → mulai dari kanan, prev → dari kiri
+    setIdx(i => i + arah);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      setDragging(false);
+      setDragX(0);                  // animasikan meluncur ke tengah
+    }));
+  };
+  const prev = () => pindah(-1);
+  const next = () => pindah(1);
 
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const jarak = touchStart - touchEnd;
-    if (jarak > 50)  next();   // swipe kiri → berikutnya
-    if (jarak < -50) prev();   // swipe kanan → sebelumnya
-    setTouchStart(0); setTouchEnd(0);
+  const onTouchStart = (e) => { startX.current = e.targetTouches[0].clientX; setDragging(true); setDragX(0); };
+  const onTouchMove  = (e) => { setDragX(e.targetTouches[0].clientX - startX.current); };
+  const onTouchEnd   = () => {
+    const jarak = dragX;
+    setDragging(false);
+    if (jarak <= -55 && idx < data.length - 1) { setIdx(i => i + 1); setDragX(0); }   // swipe kiri → berikutnya
+    else if (jarak >= 55 && idx > 0)           { setIdx(i => i - 1); setDragX(0); }   // swipe kanan → sebelumnya
+    else setDragX(0);                                                                  // batal → balik ke tengah
   };
 
   // Layar selesai semua
   if (semua) return (
     <div style={{
-      position: "fixed", inset: 0, background: "#050e00", zIndex: 9999,
+      position: "fixed", top: 0, bottom: 0, left: "50%", transform: "translateX(-50%)",
+      width: "100%", maxWidth: 480, background: "#050e00", zIndex: 9999,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: 32,
+      padding: 32, boxShadow: "0 0 0 100vmax rgba(0,0,0,0.55)",
     }}>
       <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
       <div style={{ fontSize: 24, fontWeight: 900, color: "#34c776", marginBottom: 8 }}>Alhamdulillah!</div>
@@ -1840,12 +1875,15 @@ function ModeBacaDzikir({ data, judul, onTutup }) {
 
   return (
     <div
-      onTouchStart={(e)=>setTouchStart(e.targetTouches[0].clientX)}
-      onTouchMove={(e)=>setTouchEnd(e.targetTouches[0].clientX)}
+      ref={el=>{ if (el) lebar.current = el.clientWidth; }}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       style={{
-        position: "fixed", inset: 0, background: "#080808", zIndex: 9999,
-        display: "flex", flexDirection: "column", overflowY: "auto",
+        position: "fixed", top: 0, bottom: 0, left: "50%", transform: "translateX(-50%)",
+        width: "100%", maxWidth: 480, background: "#080808", zIndex: 9999,
+        display: "flex", flexDirection: "column", overflowY: "auto", overflowX: "hidden",
+        boxShadow: "0 0 0 100vmax rgba(0,0,0,0.55)",
       }}>
       {/* HEADER */}
       <div style={{
@@ -1879,8 +1917,10 @@ function ModeBacaDzikir({ data, judul, onTutup }) {
 
       {/* KARTU UTAMA */}
       <div style={{ flex: 1, padding: "16px 18px 20px", display: "flex", flexDirection: "column", gap: 16,
-        transform: `translateX(${slide * 60}px)`, opacity: slide === 0 ? 1 : 0.3,
-        transition: "transform .13s ease, opacity .13s ease" }}>
+        transform: `translateX(${dragX}px)`,
+        opacity: dragging && Math.abs(dragX) > 0 ? Math.max(0.45, 1 - Math.abs(dragX) / 380) : 1,
+        transition: dragging ? "none" : "transform .2s ease, opacity .2s ease",
+        touchAction: "pan-y" }}>
         {/* Nama dzikir */}
         <div style={{ textAlign: "center" }}>
           <span style={{
@@ -2243,11 +2283,11 @@ function HalamanTanyaAI({ catatan, isPro, onGatePro, t, tema }) {
     setInput("");
     setLoading(true);
     try {
-      const ringkas = catatan.filter(n=>!n.hapus&&!n.arsip).slice(0,30).map(n=>({judul:n.judul,isi:n.isi||(n.item||[]).map(i=>(i.cek?"✅":"☐")+" "+i.teks).join(", ")}));
+      const ringkas = catatan.filter(n=>!n.hapus&&!n.arsip).slice(0,30).map(n=>({judul:n.judul,isi:stripHtml(n.isi)||(n.item||[]).map(i=>(i.cek?"✅":"☐")+" "+i.teks).join(", ")}));
       const res = await fetch(AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"tanya",pertanyaan:q,semuaCatatan:ringkas})});
       const data = await res.json();
       setPesan(p=>[...p,{dari:"ai",teks:data.hasil||data.error||"AI tidak merespons."}]);
-    } catch { setPesan(p=>[...p,{dari:"ai",teks:"❌ Tidak dapat menghubungi AI. Pastikan GEMINI_API_KEY sudah diset."}]); }
+    } catch { setPesan(p=>[...p,{dari:"ai",teks:"❌ Tidak dapat menghubungi AI. Coba lagi sebentar."}]); }
     setLoading(false);
   };
 
@@ -2633,7 +2673,7 @@ export default function App() {
 
   const difilter = [...catatan].filter(n => {
     if (n.arsip||n.hapus) return false;
-    if (kueri && !(n.judul?.toLowerCase().includes(kueri.toLowerCase())||n.isi?.toLowerCase().includes(kueri.toLowerCase()))) return false;
+    if (kueri && !(n.judul?.toLowerCase().includes(kueri.toLowerCase())||stripHtml(n.isi).toLowerCase().includes(kueri.toLowerCase()))) return false;
     if (folderFilter !== "semua" && n.folder !== folderFilter) return false;
     if (filter==="semua") return true;
     if (filter.startsWith("mood_")) return n.mood===filter.slice(5);
@@ -2915,7 +2955,7 @@ export default function App() {
               <span style={{fontSize:28}}>👑</span>
               <div>
                 <div style={{color:"#f5c842",fontWeight:800,fontSize:15}}>KapurPad Pro</div>
-                <div style={{color:"#555",fontSize:12,marginTop:2}}>Folder, AI Gemini, Laporan & lebih</div>
+                <div style={{color:"#555",fontSize:12,marginTop:2}}>Folder, Asisten AI, Laporan & lebih</div>
               </div>
               <div style={{marginLeft:"auto",color:"#f5c842",fontSize:20}}>›</div>
             </div>
