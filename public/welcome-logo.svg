@@ -1,0 +1,14 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- huruf K kapur -->
+  <g stroke="var(--accent,#28c0b6)" stroke-width="10" stroke-linecap="round" fill="none">
+    <line x1="38" y1="30" x2="38" y2="84"/>
+    <line x1="38" y1="58" x2="67" y2="30"/>
+    <line x1="38" y1="58" x2="70" y2="84"/>
+  </g>
+  <!-- batang kapur -->
+  <rect x="68" y="78" width="11" height="32" rx="5" fill="var(--accent2,#f5a030)" transform="rotate(-48 73 94)"/>
+  <!-- debu -->
+  <circle cx="78" cy="88" r="2.5" fill="var(--accent,#28c0b6)"/>
+  <circle cx="84" cy="92" r="2" fill="var(--accent,#28c0b6)"/>
+  <circle cx="74" cy="96" r="1.5" fill="var(--accent,#28c0b6)"/>
+</svg>

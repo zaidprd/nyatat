@@ -2602,13 +2602,15 @@ function WelcomeScreen({ onBuatCatatan, onTemplate, onDzikir, isTerang, t, tema 
     <div style={{ padding:"32px 24px", background:t.bg, minHeight:"70vh" }}>
       {/* ATAS */}
       <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:16 }}>
-        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-label="KapurPad">
-          <g transform="rotate(-38 32 32)">
-            <rect x="23" y="12" width="18" height="40" rx="6" fill="#f4f1e8"/>
-            <rect x="23" y="12" width="18" height="11" rx="6" fill={tema.aksen}/>
-            <rect x="23" y="44" width="18" height="8" rx="4" fill="#d6d0c4"/>
+        <svg width="100" height="100" viewBox="0 0 120 120" aria-label="KapurPad">
+          <g stroke={tema.aksen} strokeWidth="10" strokeLinecap="round" fill="none">
+            <line x1="38" y1="30" x2="38" y2="84"/>
+            <line x1="38" y1="58" x2="67" y2="30"/>
+            <line x1="38" y1="58" x2="70" y2="84"/>
           </g>
-          <path d="M9 53 q14 -7 33 -3" stroke="#cfc9bd" strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.75"/>
+          <rect x="68" y="78" width="11" height="32" rx="5" fill="#f5a030" transform="rotate(-48 73 94)"/>
+          <circle cx="78" cy="88" r="2.5" fill={tema.aksen}/>
+          <circle cx="84" cy="92" r="2" fill={tema.aksen}/>
         </svg>
         <div style={{ textAlign:"center" }}>
           <div style={{ fontSize:15, color:t.subteks }}>Selamat datang di</div>
