@@ -82,13 +82,14 @@ const TEMPLATE = [
   { ikon:"💡", nama:"Ide Bebas",        tipe:"teks",   judul:"Ide —",             isi:"Ide       :\nMengapa   :\nBagaimana :\nLangkah 1 :" },
 ];
 
+// Tiap tema punya palette lengkap → memilih tema mengubah seluruh "kertas", teks menyesuaikan
 const TEMA = [
-  { id:"gelap",   nama:"Gelap",    bg:"#080808", nav:"#0a0a0a", aksen:"#28c0b6" },
-  { id:"arang",   nama:"Arang",    bg:"#111111", nav:"#161616", aksen:"#f5c842" },
-  { id:"hijau",   nama:"Hutan",    bg:"#061008", nav:"#0a160a", aksen:"#34c776" },
-  { id:"biru",    nama:"Laut",     bg:"#060810", nav:"#0a0e18", aksen:"#3d9de8" },
-  { id:"coklat",  nama:"Kopi",     bg:"#100a04", nav:"#160e06", aksen:"#e88530" },
-  { id:"terang",  nama:"Terang",   bg:"#f0ede8", nav:"#ffffff", aksen:"#28c0b6" },
+  { id:"gelap",  nama:"Gelap",  terang:false, aksen:"#28c0b6", bg:"#080808", nav:"#0a0a0a", kartu:"#141414", teks:"#ece8e0", subteks:"#8a8a8a", border:"#1e1e1e", input:"#1a1a1a", muted:"#555555" },
+  { id:"arang",  nama:"Arang",  terang:false, aksen:"#f5c842", bg:"#111111", nav:"#161616", kartu:"#1c1c1c", teks:"#ece8e0", subteks:"#8f8f8f", border:"#262626", input:"#202020", muted:"#5a5a5a" },
+  { id:"hijau",  nama:"Hutan",  terang:false, aksen:"#34c776", bg:"#061008", nav:"#0a160a", kartu:"#0e1c12", teks:"#e6f0e8", subteks:"#7fa98a", border:"#16281c", input:"#102016", muted:"#4e6b57" },
+  { id:"biru",   nama:"Laut",   terang:false, aksen:"#3d9de8", bg:"#060810", nav:"#0a0e18", kartu:"#0e1424", teks:"#e6ecf6", subteks:"#8093b0", border:"#172033", input:"#101a2c", muted:"#4f6182" },
+  { id:"coklat", nama:"Kopi",   terang:false, aksen:"#e88530", bg:"#100a04", nav:"#160e06", kartu:"#1d140b", teks:"#f0e6da", subteks:"#b09878", border:"#2c1e10", input:"#221708", muted:"#7a5f42" },
+  { id:"terang", nama:"Terang", terang:true,  aksen:"#28c0b6", bg:"#f0ede8", nav:"#ffffff", kartu:"#ffffff", teks:"#1a1a1a", subteks:"#666666", border:"rgba(0,0,0,0.09)", input:"#f5f5f0", muted:"#999999" },
 ];
 
 const STORAGE_KEY   = "kapurpad_v1";
@@ -458,13 +459,14 @@ const bagikanCatatan = async (catatan) => {
 
 // ═══════════════════════ GATE PRO ════════════════════════════════════════════
 
-function GatePro({ pesan, onUpgrade, onTutup }) {
+function GatePro({ pesan, onUpgrade, onTutup, t }) {
+  const terang = t && t.kartu === "#ffffff";
   return (
-    <div style={{position:"fixed",inset:0,background:"#000c",zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-      <div style={{background:"#0f0f0f",border:"1px solid #f5c84244",borderRadius:20,padding:28,maxWidth:340,width:"100%",textAlign:"center"}}>
+    <div style={{position:"fixed",inset:0,background:terang?"#0006":"#000c",zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{background:terang?"#ffffff":"#0f0f0f",border:"1px solid #f5c84244",borderRadius:20,padding:28,maxWidth:340,width:"100%",textAlign:"center",boxShadow:terang?"0 10px 40px #0003":"none"}}>
         <div style={{fontSize:48,marginBottom:12}}>👑</div>
-        <div style={{fontSize:20,fontWeight:900,color:"#f5c842",marginBottom:10}}>Fitur Pro</div>
-        <div style={{fontSize:14,color:"#888",lineHeight:1.7,marginBottom:22}}>{pesan}</div>
+        <div style={{fontSize:20,fontWeight:900,color:terang?"#c79a16":"#f5c842",marginBottom:10}}>Fitur Pro</div>
+        <div style={{fontSize:14,color:terang?"#666":"#888",lineHeight:1.7,marginBottom:22}}>{pesan}</div>
         <button onClick={onUpgrade} style={{
           width:"100%",padding:"14px 0",background:"linear-gradient(135deg,#f5c842,#e8a030)",
           border:"none",borderRadius:12,color:"#000",fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:10,
@@ -823,7 +825,16 @@ function ModalPin({ mode, pinSimpan, onSukses, onBatal }) {
 
 // ═══════════════════════ PENGATURAN ══════════════════════════════════════════
 
-function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePro, onOwnerAktif }) {
+function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePro, onOwnerAktif, t }) {
+  const terang = t && t.kartu === "#ffffff";
+  const cBg = terang ? "#f0ede8" : "#080808";
+  const cBorder = terang ? "#e4e0d8" : "#141414";
+  const cTeks = terang ? "#1a1a1a" : "#ece8e0";
+  const cInputBg = terang ? "#f5f2ec" : "#1a1a1a";
+  const cInputBr = terang ? "#e0ddd6" : "#2a2a2a";
+  const cInputTx = terang ? "#333" : "#ddd";
+  const cItemBg = terang ? "#f7f5f0" : "#111";
+  const cItemBr = terang ? "#e4e0d8" : "#222";
   const [konfirmHapus, setKonfirmHapus] = useState(false);
   const [pinMode, setPinMode] = useState(null); // "buat" | "hapus"
   const [notifStatus, setNotifStatus] = useState(Notification?.permission||"default");
@@ -873,7 +884,7 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
   };
 
   return (
-    <div style={{position:"fixed", top:0, bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:480, background:"#080808", zIndex:200, overflowY:"auto", boxShadow:"0 0 0 100vmax rgba(0,0,0,0.55)"}}>
+    <div style={{position:"fixed", top:0, bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:480, background:cBg, zIndex:200, overflowY:"auto", boxShadow:"0 0 0 100vmax rgba(0,0,0,0.55)"}}>
       {pinMode && (
         <ModalPin
           mode={pinMode}
@@ -882,25 +893,25 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
           onBatal={() => setPinMode(null)}
         />
       )}
-      <div style={{display:"flex", alignItems:"center", padding:"14px 16px", borderBottom:"1px solid #141414", position:"sticky", top:0, background:"#080808", zIndex:10}}>
+      <div style={{display:"flex", alignItems:"center", padding:"14px 16px", borderBottom:`1px solid ${cBorder}`, position:"sticky", top:0, background:cBg, zIndex:10}}>
         <button onClick={onTutup} style={{background:"none", border:"none", color:"#f5c842", fontSize:22, cursor:"pointer", marginRight:12}}>←</button>
-        <span style={{fontSize:18, fontWeight:800, color:"#ece8e0"}}>⚙️ Pengaturan</span>
+        <span style={{fontSize:18, fontWeight:800, color:cTeks}}>⚙️ Pengaturan</span>
       </div>
 
       <div style={{padding:16, display:"flex", flexDirection:"column", gap:14}}>
 
         {/* Profil */}
-        <Seksi judul="PROFIL">
+        <Seksi judul="PROFIL" terang={terang}>
           <div style={{padding:"12px 0"}}>
-            <label style={{fontSize:12, color:"#666", display:"block", marginBottom:6}}>Nama Pengguna</label>
+            <label style={{fontSize:12, color:terang?"#888":"#666", display:"block", marginBottom:6}}>Nama Pengguna</label>
             <input value={settings.namaPengguna||""} onChange={e=>onUbah({...settings,namaPengguna:e.target.value})}
               placeholder="Masukkan nama kamu…"
-              style={{width:"100%", background:"#1a1a1a", border:"1px solid #2a2a2a", borderRadius:8, padding:"10px 12px", color:"#ddd", fontSize:14, outline:"none"}}/>
+              style={{width:"100%", background:cInputBg, border:`1px solid ${cInputBr}`, borderRadius:8, padding:"10px 12px", color:cInputTx, fontSize:14, outline:"none"}}/>
           </div>
         </Seksi>
 
         {/* Tema */}
-        <Seksi judul="TEMA WARNA">
+        <Seksi judul="TEMA WARNA" terang={terang}>
           <div style={{display:"flex", gap:10, flexWrap:"wrap", padding:"10px 0"}}>
             {TEMA.map(t => {
               const terkunci = !isPro && t.id !== "gelap";
@@ -928,22 +939,22 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
         </Seksi>
 
         {/* Font */}
-        <Seksi judul="UKURAN TEKS">
+        <Seksi judul="UKURAN TEKS" terang={terang}>
           <div style={{padding:"10px 0", display:"flex", alignItems:"center", gap:12}}>
             <button onClick={()=>onUbah({...settings,ukuranFont:Math.max(12,settings.ukuranFont-1)})}
-              style={{width:36,height:36,borderRadius:8,border:"1px solid #2a2a2a",background:"#1a1a1a",color:"#ddd",fontSize:18,cursor:"pointer"}}>−</button>
+              style={{width:36,height:36,borderRadius:8,border:`1px solid ${cInputBr}`,background:cInputBg,color:cInputTx,fontSize:18,cursor:"pointer"}}>−</button>
             <span style={{color:"#f5c842",fontWeight:700,fontSize:18,minWidth:30,textAlign:"center"}}>{settings.ukuranFont}</span>
             <button onClick={()=>onUbah({...settings,ukuranFont:Math.min(20,settings.ukuranFont+1)})}
-              style={{width:36,height:36,borderRadius:8,border:"1px solid #2a2a2a",background:"#1a1a1a",color:"#ddd",fontSize:18,cursor:"pointer"}}>+</button>
-            <span style={{fontSize:settings.ukuranFont,color:"#666"}}>Contoh teks catatan</span>
+              style={{width:36,height:36,borderRadius:8,border:`1px solid ${cInputBr}`,background:cInputBg,color:cInputTx,fontSize:18,cursor:"pointer"}}>+</button>
+            <span style={{fontSize:settings.ukuranFont,color:terang?"#888":"#666"}}>Contoh teks catatan</span>
           </div>
         </Seksi>
 
         {/* Notifikasi */}
-        <Seksi judul="NOTIFIKASI & PENGINGAT">
+        <Seksi judul="NOTIFIKASI & PENGINGAT" terang={terang}>
           <div style={{padding:"12px 0", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
             <div>
-              <div style={{color:"#ddd",fontSize:14}}>Izin Notifikasi</div>
+              <div style={{color:cTeks,fontSize:14}}>Izin Notifikasi</div>
               <div style={{color:"#555",fontSize:11,marginTop:2}}>{notifStatus==="granted"?"✅ Aktif":notifStatus==="denied"?"❌ Diblokir":"Belum diatur"}</div>
             </div>
             {notifStatus!=="granted" && (
@@ -955,11 +966,11 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
         </Seksi>
 
         {/* Keamanan */}
-        <Seksi judul="KEAMANAN">
+        <Seksi judul="KEAMANAN" terang={terang}>
           <div style={{padding:"10px 0", display:"flex", flexDirection:"column", gap:10}}>
             <div style={{display:"flex", alignItems:"center", justifyContent:"space-between"}}>
               <div>
-                <div style={{color:"#ddd",fontSize:14}}>PIN Aplikasi</div>
+                <div style={{color:cTeks,fontSize:14}}>PIN Aplikasi</div>
                 <div style={{color:"#555",fontSize:11,marginTop:2}}>{settings.pin?"✅ PIN aktif":"Belum diatur"}</div>
               </div>
               <div style={{display:"flex",gap:8}}>
@@ -967,7 +978,7 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
                   onClick={()=> !isPro
                     ? onGatePro?.("Fitur PIN Keamanan tersedia untuk pengguna Pro 🔒")
                     : setPinMode("buat")}
-                  style={{background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:8,padding:"8px 12px",color:"#ddd",cursor:"pointer",fontSize:12}}>
+                  style={{background:cInputBg,border:`1px solid ${cInputBr}`,borderRadius:8,padding:"8px 12px",color:cInputTx,cursor:"pointer",fontSize:12}}>
                   {!isPro ? "🔒 Pro" : settings.pin?"Ganti":"Buat"} PIN
                 </button>
                 {settings.pin&&<button onClick={()=>onUbah({...settings,pin:""})} style={{background:"#1a0000",border:"1px solid #6e1010",borderRadius:8,padding:"8px 12px",color:"#e84040",cursor:"pointer",fontSize:12}}>Hapus</button>}
@@ -977,12 +988,12 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
         </Seksi>
 
         {/* Data */}
-        <Seksi judul="DATA & BACKUP">
+        <Seksi judul="DATA & BACKUP" terang={terang}>
           <div style={{display:"flex", flexDirection:"column", gap:10, padding:"10px 0"}}>
-            <button onClick={eksporCatatan} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#111",border:"1px solid #222",borderRadius:10,color:"#ddd",cursor:"pointer",fontSize:14}}>
+            <button onClick={eksporCatatan} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:cItemBg,border:`1px solid ${cItemBr}`,borderRadius:10,color:cInputTx,cursor:"pointer",fontSize:14}}>
               📤 Ekspor Catatan (JSON)
             </button>
-            <label style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:"#111",border:"1px solid #222",borderRadius:10,color:"#ddd",cursor:"pointer",fontSize:14}}>
+            <label style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:cItemBg,border:`1px solid ${cItemBr}`,borderRadius:10,color:cInputTx,cursor:"pointer",fontSize:14}}>
               📥 Impor Catatan (JSON)
               <input type="file" accept=".json" onChange={imporCatatan} style={{display:"none"}}/>
             </label>
@@ -995,7 +1006,7 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
                 <div style={{color:"#e84040",fontSize:13,marginBottom:10}}>Yakin? Semua catatan akan dihapus permanen!</div>
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>{localStorage.clear();window.location.reload();}} style={{flex:1,padding:10,background:"#e84040",border:"none",borderRadius:8,color:"#fff",cursor:"pointer",fontWeight:700}}>Ya, Hapus</button>
-                  <button onClick={()=>setKonfirmHapus(false)} style={{flex:1,padding:10,background:"#222",border:"none",borderRadius:8,color:"#ddd",cursor:"pointer"}}>Batal</button>
+                  <button onClick={()=>setKonfirmHapus(false)} style={{flex:1,padding:10,background:cItemBg,border:`1px solid ${cItemBr}`,borderRadius:8,color:cInputTx,cursor:"pointer"}}>Batal</button>
                 </div>
               </div>
             )}
@@ -1003,7 +1014,7 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
         </Seksi>
 
         {/* Tentang */}
-        <Seksi judul="TENTANG">
+        <Seksi judul="TENTANG" terang={terang}>
           <div style={{padding:"10px 0", color:"#555", fontSize:13, lineHeight:1.8}}>
             <div onClick={tapVersi} style={{cursor:"pointer",userSelect:"none"}}>📱 <strong style={{color:"#888"}}>KapurPad</strong> versi 1.0.0{tapCount>0&&tapCount<7?` · ${7-tapCount}`:""}</div>
             <div>📦 Catatan tersimpan: {catatan.filter(n=>!n.hapus).length}</div>
@@ -1017,10 +1028,10 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
   );
 }
 
-function Seksi({ judul, children }) {
+function Seksi({ judul, children, terang }) {
   return (
-    <div style={{background:"#111", borderRadius:14, overflow:"hidden"}}>
-      <div style={{padding:"10px 16px 0", fontSize:11, color:"#3a3a3a", fontWeight:700, letterSpacing:1}}>{judul}</div>
+    <div style={{background:terang?"#ffffff":"#111", border:terang?"1px solid #e8e3da":"none", borderRadius:14, overflow:"hidden"}}>
+      <div style={{padding:"10px 16px 0", fontSize:11, color:terang?"#999":"#3a3a3a", fontWeight:700, letterSpacing:1}}>{judul}</div>
       <div style={{padding:"0 16px 12px"}}>{children}</div>
     </div>
   );
@@ -1028,7 +1039,16 @@ function Seksi({ judul, children }) {
 
 // ═══════════════════════ MODAL PREMIUM ═══════════════════════════════════════
 
-function ModalPremium({ onTutup, onProAktif }) {
+function ModalPremium({ onTutup, onProAktif, t }) {
+  const terang = t && t.kartu === "#ffffff";
+  const cSheet = terang ? "#ffffff" : "#0f0f0f";
+  const cJudul = terang ? "#1a1a1a" : "#ece8e0";
+  const cSub   = terang ? "#888" : "#555";
+  const cFiturJudul = terang ? "#333" : "#ddd";
+  const cFiturDesc  = terang ? "#888" : "#444";
+  const cIkonBg = terang ? "#f3f0ea" : "#1a1a1a";
+  const cInfoBg = terang ? "#f7f5f0" : "#0a0a0a";
+  const cXBg = terang ? "#efece6" : "#1e1e1e";
   const [loading, setLoading] = useState(false);
   const [pesanError, setPesanError] = useState("");
 
@@ -1040,7 +1060,6 @@ function ModalPremium({ onTutup, onProAktif }) {
     {ikon:"📊",judul:"Laporan Mingguan",        desc:"Bar chart 7 hari, streak, total ceklis selesai, dan top mood minggu ini."},
     {ikon:"🔔",judul:"Pengingat Berulang",      desc:"Atur pengingat Sekali, Harian, Mingguan, atau Bulanan."},
     {ikon:"🎨",judul:"Tema Premium",            desc:"Tema Hutan, Laut, Kopi, dan Terang — pilih suasana favoritmu."},
-    {ikon:"∞", judul:"Catatan Unlimited",       desc:"Gratis hanya 20 catatan. Pro: catatan tak terbatas."},
   ];
 
   // Muat Midtrans Snap script — cleanup saat modal tutup
@@ -1100,19 +1119,19 @@ function ModalPremium({ onTutup, onProAktif }) {
   const infoTagih = "Pembayaran aman via Midtrans · QRIS, GoPay, Transfer Bank";
 
   return (
-    <div style={{position:"fixed",inset:0,background:"#000e",zIndex:500,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onTutup}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#0f0f0f",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,maxHeight:"88vh",overflowY:"auto",padding:24}}>
+    <div style={{position:"fixed",inset:0,background:terang?"#0007":"#000e",zIndex:500,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onTutup}>
+      <div onClick={e=>e.stopPropagation()} style={{background:cSheet,borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,maxHeight:"88vh",overflowY:"auto",padding:24,boxShadow:terang?"0 -8px 40px #0002":"none"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
           <div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:22}}>👑</span>
               <span style={{fontSize:22,fontWeight:900,letterSpacing:-0.5}}>
-                <span style={{color:"#f5c842"}}>KapurPad</span><span style={{color:"#ece8e0"}}> Pro</span>
+                <span style={{color:"#f5c842"}}>KapurPad</span><span style={{color:cJudul}}> Pro</span>
               </span>
             </div>
-            <div style={{fontSize:13,color:"#555",marginTop:2}}>Buka semua fitur tanpa batas</div>
+            <div style={{fontSize:13,color:cSub,marginTop:2}}>Buka semua fitur tanpa batas</div>
           </div>
-          <button onClick={onTutup} style={{background:"#1e1e1e",border:"none",borderRadius:"50%",width:32,height:32,color:"#888",cursor:"pointer",fontSize:18}}>×</button>
+          <button onClick={onTutup} style={{background:cXBg,border:"none",borderRadius:"50%",width:32,height:32,color:"#888",cursor:"pointer",fontSize:18}}>×</button>
         </div>
         <div style={{border:"2px solid #f5c842",borderRadius:14,padding:"18px 16px",background:"#191300",textAlign:"center",marginBottom:18,position:"relative"}}>
           <div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:"#f5c842",color:"#000",fontSize:10,fontWeight:800,padding:"2px 10px",borderRadius:10,whiteSpace:"nowrap"}}>BAYAR SEKALI · TANPA LANGGANAN</div>
@@ -1128,20 +1147,20 @@ function ModalPremium({ onTutup, onProAktif }) {
             {pesanError}
           </div>
         )}
-        <div style={{textAlign:"center",fontSize:11,color:"#333",marginBottom:22}}>{infoTagih}</div>
-        <div style={{fontSize:12,color:"#444",fontWeight:700,marginBottom:12,letterSpacing:1}}>FITUR UNGGULAN</div>
+        <div style={{textAlign:"center",fontSize:11,color:cSub,marginBottom:22}}>{infoTagih}</div>
+        <div style={{fontSize:12,color:cFiturDesc,fontWeight:700,marginBottom:12,letterSpacing:1}}>FITUR UNGGULAN</div>
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
           {fitur.map(f=>(
             <div key={f.judul} style={{display:"flex",gap:14,alignItems:"flex-start"}}>
-              <div style={{width:38,height:38,borderRadius:10,background:"#1a1a1a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{f.ikon}</div>
+              <div style={{width:38,height:38,borderRadius:10,background:cIkonBg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{f.ikon}</div>
               <div>
-                <div style={{color:"#ddd",fontWeight:700,fontSize:14}}>{f.judul}</div>
-                <div style={{color:"#444",fontSize:12,marginTop:2}}>{f.desc}</div>
+                <div style={{color:cFiturJudul,fontWeight:700,fontSize:14}}>{f.judul}</div>
+                <div style={{color:cFiturDesc,fontSize:12,marginTop:2}}>{f.desc}</div>
               </div>
             </div>
           ))}
         </div>
-        <div style={{margin:"22px 0 8px",padding:14,background:"#0a0a0a",borderRadius:10,fontSize:11,color:"#333",lineHeight:1.7,textAlign:"center"}}>
+        <div style={{margin:"22px 0 8px",padding:14,background:cInfoBg,borderRadius:10,fontSize:11,color:cSub,lineHeight:1.7,textAlign:"center"}}>
           Catatan kamu tidak pernah digunakan untuk melatih model AI apapun.<br/>
           Kebijakan Privasi · Syarat Layanan
         </div>
@@ -1463,13 +1482,13 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
       {/* AI PERINTAH MODAL */}
       {aiMode === "buatDari" && (
         <div style={{position:"absolute",inset:0,background:"#000c",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-          <div style={{background:"#1c1c1c",borderRadius:16,padding:24,width:"100%",maxWidth:360}}>
-            <div style={{color:"#f5c842",fontSize:16,fontWeight:800,marginBottom:12}}>📝 Buat dari Perintah</div>
+          <div style={{background:isTerang?"#ffffff":"#1c1c1c",borderRadius:16,padding:24,width:"100%",maxWidth:360,boxShadow:isTerang?"0 10px 40px #0003":"none"}}>
+            <div style={{color:isTerang?"#c79a16":"#f5c842",fontSize:16,fontWeight:800,marginBottom:12}}>📝 Buat dari Perintah</div>
             <textarea value={aiPerintah} onChange={e=>setAiPerintah(e.target.value)}
               placeholder="Contoh: Buat daftar belanja mingguan untuk keluarga 4 orang…"
-              style={{width:"100%",minHeight:100,background:"#2a2a2a",border:"1px solid #3a3a3a",borderRadius:8,padding:10,color:"#ddd",resize:"none",boxSizing:"border-box",fontSize:14}}/>
+              style={{width:"100%",minHeight:100,background:isTerang?"#f3f0ea":"#2a2a2a",border:`1px solid ${isTerang?"#e0ddd6":"#3a3a3a"}`,borderRadius:8,padding:10,color:isTerang?"#333":"#ddd",resize:"none",boxSizing:"border-box",fontSize:14}}/>
             <div style={{display:"flex",gap:10,marginTop:12}}>
-              <button onClick={()=>{setAiMode(null);setAiPerintah("");}} style={{flex:1,padding:10,background:"#2a2a2a",border:"none",borderRadius:8,color:"#888",cursor:"pointer"}}>Batal</button>
+              <button onClick={()=>{setAiMode(null);setAiPerintah("");}} style={{flex:1,padding:10,background:isTerang?"#efece6":"#2a2a2a",border:"none",borderRadius:8,color:isTerang?"#666":"#888",cursor:"pointer"}}>Batal</button>
               <button onClick={()=>panggilAI("buatCatatan",aiPerintah)} disabled={!aiPerintah.trim()||aiLoading}
                 style={{flex:2,padding:10,background:"#f5c842",border:"none",borderRadius:8,color:"#000",fontWeight:800,cursor:"pointer",opacity:aiPerintah.trim()?1:.5}}>
                 {aiLoading?"⏳ Memproses…":"✨ Buat"}
@@ -2645,16 +2664,11 @@ export default function App() {
   };
 
   const tema = TEMA.find(t=>t.id===settings.tema)||TEMA[0];
-  const isTerang = settings.tema === "terang";
+  const isTerang = !!tema.terang;
+  // Palette penuh diambil langsung dari tema terpilih (kertas + teks ikut berubah)
   const t = {
-    teks:    isTerang ? "#1a1a1a"          : "#ece8e0",
-    subteks: isTerang ? "#666666"          : "#888888",
-    bg:      isTerang ? "#f0ede8"          : tema.bg,
-    nav:     isTerang ? "#ffffff"          : tema.nav,
-    kartu:   isTerang ? "#ffffff"          : "#111111",
-    border:  isTerang ? "rgba(0,0,0,0.09)" : "#1c1c1c",
-    input:   isTerang ? "#f5f5f0"          : "#1a1a1a",
-    muted:   isTerang ? "#999999"          : "#444444",
+    teks: tema.teks, subteks: tema.subteks, bg: tema.bg, nav: tema.nav,
+    kartu: tema.kartu, border: tema.border, input: tema.input, muted: tema.muted, aksen: tema.aksen,
   };
 
   useEffect(() => { simpanLokal(catatan); }, [catatan]);
@@ -2677,15 +2691,28 @@ export default function App() {
     document.body.style.background = tema.bg;
   }, [tema]);
 
+  // Proteksi ringan (deterrent): cegah klik-kanan & shortcut inspect.
+  // Catatan: kode sisi-klien tidak bisa 100% dicegah; kunci utama (API key) sudah di server.
+  useEffect(() => {
+    const blokirMenu = (e) => e.preventDefault();
+    const blokirKey = (e) => {
+      const k = (e.key || "").toLowerCase();
+      if (k === "f12") e.preventDefault();
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && ["i","j","c"].includes(k)) e.preventDefault();
+      if ((e.ctrlKey || e.metaKey) && k === "u") e.preventDefault();
+    };
+    document.addEventListener("contextmenu", blokirMenu);
+    document.addEventListener("keydown", blokirKey);
+    return () => {
+      document.removeEventListener("contextmenu", blokirMenu);
+      document.removeEventListener("keydown", blokirKey);
+    };
+  }, []);
+
   const tampilNotif = (p) => { setNotif(p); setTimeout(()=>setNotif(null),2600); };
 
   const simpanCatatan = (c) => {
-    const aktif = catatan.filter(n=>!n.hapus&&!n.arsip);
-    const isNew  = !catatan.find(n=>n.id===c.id);
-    if (isNew && !isPro && aktif.length >= 20) {
-      setGatePro("Batas 20 catatan gratis tercapai. Upgrade Pro untuk catatan tak terbatas! 🚀");
-      return;
-    }
+    // Catatan tak terbatas untuk semua (gratis & Pro) — tidak ada batas jumlah.
     setCatatan(p => { const i=p.findIndex(n=>n.id===c.id); return i>=0?p.map(n=>n.id===c.id?c:n):[c,...p]; });
   };
   const hapusCatatan  = (c) => { setCatatan(p=>p.map(n=>n.id===c.id?{...n,hapus:true}:n)); tampilNotif("Dipindah ke tong sampah"); };
@@ -2718,6 +2745,19 @@ export default function App() {
     item:(tmplDipilih.item||[]).map(t=>({id:buatId(),teks:t,cek:false,counter:0})), warna:W0,
   } : prefillKal ? prefillKal : {tipe:tipeBaru, warna:W0};
 
+  // ── KUNCI DOMAIN (anti-clone) ──
+  // Hanya berjalan di domain resmi (*.netlify.app) atau localhost. Clone di domain lain diblokir.
+  const hostOk = typeof window === "undefined"
+    || /(^|\.)netlify\.app$/.test(window.location.hostname)
+    || ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  if (!hostOk) return (
+    <div style={{minHeight:"100dvh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#0a0a0a",color:"#888",fontFamily:"sans-serif",textAlign:"center",padding:24,gap:8}}>
+      <div style={{fontSize:42}}>🔒</div>
+      <div style={{fontSize:16,fontWeight:800,color:"#ccc"}}>KapurPad</div>
+      <div style={{fontSize:13,lineHeight:1.7,maxWidth:300}}>Aplikasi ini hanya berjalan di situs resminya. Salinan tidak resmi tidak diizinkan.</div>
+    </div>
+  );
+
   // ── LAYAR PIN ──
   if (pinCheck) return (
     <ModalPin mode="masuk" pinSimpan={settings.pin} onSukses={()=>setPinCheck(false)} onBatal={()=>setPinCheck(false)}/>
@@ -2725,7 +2765,7 @@ export default function App() {
 
   // ── PENGATURAN ──
   if (showSettings) return (
-    <HalamanPengaturan settings={settings} onUbah={setSettings} onTutup={()=>setShowSettings(false)} catatan={catatan} isPro={isPro} onGatePro={bukaGatePro}
+    <HalamanPengaturan settings={settings} onUbah={setSettings} onTutup={()=>setShowSettings(false)} catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t}
       onOwnerAktif={()=>{ aktifkanPro("owner"); setIsPro(true); tampilNotif("🔓 Mode Owner aktif — Pro unlimited"); }}/>
   );
 
@@ -2764,9 +2804,10 @@ export default function App() {
           pesan={gatePro}
           onUpgrade={()=>{ setGatePro(null); setModalPro(true); }}
           onTutup={()=>setGatePro(null)}
+          t={t}
         />
       )}
-      {modalPro  && <ModalPremium onTutup={()=>setModalPro(false)} onProAktif={()=>{ setIsPro(true); setGatePro(null); }}/>}
+      {modalPro  && <ModalPremium onTutup={()=>setModalPro(false)} onProAktif={()=>{ setIsPro(true); setGatePro(null); }} t={t}/>}
       {modalTmpl && <ModalTemplate onPilih={tp=>{setTmplDipilih(tp);setModalTmpl(false);setSedangBuat(true);}} onTutup={()=>setModalTmpl(false)} isPro={isPro} onGatePro={bukaGatePro}/>}
       {modalFolder && (
         <ModalBuatFolder
