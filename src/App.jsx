@@ -163,21 +163,24 @@ const PRO_EXPIRY_KEY = "nyatet_pro_expiry";
 
 const cekStatusPro = () => {
   try {
-    if (localStorage.getItem(PRO_KEY) !== "true") return false;
-    const expiry = localStorage.getItem(PRO_EXPIRY_KEY);
-    if (expiry && new Date(expiry) > new Date()) return true;
-    localStorage.removeItem(PRO_KEY);
-    localStorage.removeItem(PRO_EXPIRY_KEY);
-  } catch {}
-  return false;
+    const pro = localStorage.getItem(PRO_KEY);
+    const exp = localStorage.getItem(PRO_EXPIRY_KEY);
+    if (!pro || !exp) return false;
+    if (Date.now() > parseInt(exp)) {
+      localStorage.removeItem(PRO_KEY);
+      localStorage.removeItem(PRO_EXPIRY_KEY);
+      return false;
+    }
+    return true;
+  } catch { return false; }
 };
 
-const aktifkanPro = (durasi) => {
-  const exp = new Date();
-  if (durasi === "tahunan") exp.setFullYear(exp.getFullYear() + 1);
-  else exp.setMonth(exp.getMonth() + 1);
+const aktifkanPro = (plan) => {
+  const durasi = plan === "tahunan"
+    ? 365 * 24 * 60 * 60 * 1000
+    : 30  * 24 * 60 * 60 * 1000;
   localStorage.setItem(PRO_KEY, "true");
-  localStorage.setItem(PRO_EXPIRY_KEY, exp.toISOString());
+  localStorage.setItem(PRO_EXPIRY_KEY, String(Date.now() + durasi));
 };
 
 // URL endpoint backend untuk membuat Snap Token
@@ -255,19 +258,55 @@ const bagikanCatatan = async (catatan) => {
   }
 };
 
+// ═══════════════════════ GATE PRO ════════════════════════════════════════════
+
+function GatePro({ pesan, onUpgrade, onTutup }) {
+  return (
+    <div style={{position:"fixed",inset:0,background:"#000c",zIndex:800,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{background:"#0f0f0f",border:"1px solid #f5c84244",borderRadius:20,padding:28,maxWidth:340,width:"100%",textAlign:"center"}}>
+        <div style={{fontSize:48,marginBottom:12}}>👑</div>
+        <div style={{fontSize:20,fontWeight:900,color:"#f5c842",marginBottom:10}}>Fitur Pro</div>
+        <div style={{fontSize:14,color:"#888",lineHeight:1.7,marginBottom:22}}>{pesan}</div>
+        <button onClick={onUpgrade} style={{
+          width:"100%",padding:"14px 0",background:"linear-gradient(135deg,#f5c842,#e8a030)",
+          border:"none",borderRadius:12,color:"#000",fontWeight:800,fontSize:15,cursor:"pointer",marginBottom:10,
+        }}>
+          Upgrade Pro — Rp 99.000/tahun
+        </button>
+        <div style={{fontSize:11,color:"#555",marginBottom:16}}>Coba gratis 7 hari · Batalkan kapan saja</div>
+        <button onClick={onTutup} style={{background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:13}}>
+          Nanti saja
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════ KECIL-KECIL ═════════════════════════════════════════
 
-function PilihWarna({ aktif, onChange }) {
+function PilihWarna({ aktif, onChange, isPro, onGatePro }) {
   return (
     <div style={{ display:"flex", gap:8, flexWrap:"wrap", padding:"8px 0" }}>
-      {WARNA.map(w => (
-        <div key={w.nama} onClick={() => onChange(w)} style={{
-          width:28, height:28, borderRadius:"50%", background:w.aksen, cursor:"pointer",
-          border: aktif?.nama===w.nama ? "3px solid #fff" : "3px solid transparent",
-          boxShadow: aktif?.nama===w.nama ? `0 0 10px ${w.aksen}` : "none",
-          transition:"all .18s",
-        }}/>
-      ))}
+      {WARNA.map((w, idx) => {
+        const terkunci = !isPro && idx >= 3;
+        return (
+          <div key={w.nama}
+            onClick={() => terkunci
+              ? onGatePro?.("Warna eksklusif ini tersedia untuk pengguna Pro 🎨")
+              : onChange(w)}
+            style={{
+              width:28, height:28, borderRadius:"50%",
+              background: terkunci ? "#2a2a2a" : w.aksen,
+              cursor:"pointer",
+              border: aktif?.nama===w.nama ? "3px solid #fff" : "3px solid transparent",
+              boxShadow: aktif?.nama===w.nama ? `0 0 10px ${w.aksen}` : "none",
+              transition:"all .18s", position:"relative",
+              display:"flex", alignItems:"center", justifyContent:"center",
+            }}>
+            {terkunci && <span style={{fontSize:10,lineHeight:1}}>🔒</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -436,7 +475,9 @@ function FilterBar({ aktif, onChange }) {
 
 // ═══════════════════════ MODAL TEMPLATE ══════════════════════════════════════
 
-function ModalTemplate({ onPilih, onTutup }) {
+const TEMPLATE_GRATIS = ["Dzikir Pagi","Dzikir Petang","Daftar Belanja","Rencana Harian"];
+
+function ModalTemplate({ onPilih, onTutup, isPro, onGatePro }) {
   return (
     <div style={{position:"fixed", inset:0, background:"#000d", zIndex:400, display:"flex", alignItems:"flex-end", justifyContent:"center"}} onClick={onTutup}>
       <div onClick={e=>e.stopPropagation()} style={{background:"#111", borderRadius:"20px 20px 0 0", width:"100%", maxWidth:480, maxHeight:"80vh", overflowY:"auto", padding:20}}>
@@ -445,16 +486,31 @@ function ModalTemplate({ onPilih, onTutup }) {
           <button onClick={onTutup} style={{background:"#1e1e1e", border:"none", borderRadius:"50%", width:32, height:32, color:"#888", cursor:"pointer", fontSize:18}}>×</button>
         </div>
         <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10}}>
-          {TEMPLATE.map(t => (
-            <button key={t.nama} onClick={() => onPilih(t)} style={{
-              background:"#181818", border:"1px solid #242424", borderRadius:12,
-              padding:"14px 12px", textAlign:"left", cursor:"pointer", color:"#ddd",
-            }}>
-              <div style={{fontSize:22, marginBottom:6}}>{t.ikon}</div>
-              <div style={{fontSize:13, fontWeight:700, color:"#ece8e0"}}>{t.nama}</div>
-              <div style={{fontSize:10, color:"#555", marginTop:3}}>{t.tipe==="ceklis"?`${t.item.length} item`:"Teks"}</div>
-            </button>
-          ))}
+          {TEMPLATE.map(t => {
+            const terkunci = !isPro && !TEMPLATE_GRATIS.includes(t.nama);
+            return (
+              <button key={t.nama}
+                onClick={() => terkunci
+                  ? onGatePro?.("Template ini tersedia untuk pengguna Pro 👑")
+                  : onPilih(t)}
+                style={{
+                  background: terkunci ? "#131313" : "#181818",
+                  border:`1px solid ${terkunci?"#1e1e1e":"#242424"}`,
+                  borderRadius:12, padding:"14px 12px", textAlign:"left",
+                  cursor:"pointer", color:"#ddd", position:"relative",
+                }}>
+                {terkunci && (
+                  <div style={{position:"absolute",top:6,right:6,fontSize:12,background:"#f5c84222",
+                    border:"1px solid #f5c84244",borderRadius:8,padding:"1px 5px",color:"#f5c842"}}>👑</div>
+                )}
+                <div style={{fontSize:22, marginBottom:6, opacity:terkunci?0.4:1}}>{t.ikon}</div>
+                <div style={{fontSize:13, fontWeight:700, color:terkunci?"#444":"#ece8e0"}}>{t.nama}</div>
+                <div style={{fontSize:10, color:"#555", marginTop:3}}>
+                  {terkunci ? "Pro" : t.tipe==="ceklis"?`${t.item.length} item`:"Teks"}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -536,7 +592,7 @@ function ModalPin({ mode, pinSimpan, onSukses, onBatal }) {
 
 // ═══════════════════════ PENGATURAN ══════════════════════════════════════════
 
-function HalamanPengaturan({ settings, onUbah, onTutup, catatan }) {
+function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePro }) {
   const [konfirmHapus, setKonfirmHapus] = useState(false);
   const [pinMode, setPinMode] = useState(null); // "buat" | "hapus"
   const [notifStatus, setNotifStatus] = useState(Notification?.permission||"default");
@@ -548,6 +604,7 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan }) {
   };
 
   const eksporCatatan = () => {
+    if (!isPro) { onGatePro?.("Ekspor data tersedia untuk pengguna Pro 📤"); return; }
     const data = JSON.stringify(catatan, null, 2);
     const blob = new Blob([data], {type:"application/json"});
     const url  = URL.createObjectURL(blob);
@@ -602,18 +659,28 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan }) {
         {/* Tema */}
         <Seksi judul="TEMA WARNA">
           <div style={{display:"flex", gap:10, flexWrap:"wrap", padding:"10px 0"}}>
-            {TEMA.map(t => (
-              <button key={t.id} onClick={() => onUbah({...settings,tema:t.id})} style={{
-                padding:"8px 16px", borderRadius:20, cursor:"pointer", fontSize:13,
-                border:`2px solid ${settings.tema===t.id?"#f5c842":"#222"}`,
-                background: settings.tema===t.id?"#f5c84222":t.bg,
-                color: settings.tema===t.id?"#f5c842":"#888",
-                display:"flex", alignItems:"center", gap:6,
-              }}>
-                <div style={{width:10,height:10,borderRadius:"50%",background:t.aksen}}/>
-                {t.nama}
-              </button>
-            ))}
+            {TEMA.map(t => {
+              const terkunci = !isPro && t.id !== "gelap";
+              return (
+                <button key={t.id}
+                  onClick={() => terkunci
+                    ? onGatePro?.("Tema premium tersedia untuk pengguna Pro 🎨")
+                    : onUbah({...settings,tema:t.id})}
+                  style={{
+                    padding:"8px 16px", borderRadius:20, cursor:"pointer", fontSize:13,
+                    border:`2px solid ${settings.tema===t.id?"#f5c842":terkunci?"#1a1a1a":"#222"}`,
+                    background: settings.tema===t.id?"#f5c84222":terkunci?"#0d0d0d":t.bg,
+                    color: settings.tema===t.id?"#f5c842":terkunci?"#333":"#888",
+                    display:"flex", alignItems:"center", gap:6, position:"relative",
+                  }}>
+                  {terkunci
+                    ? <span style={{fontSize:10}}>🔒</span>
+                    : <div style={{width:10,height:10,borderRadius:"50%",background:t.aksen}}/>}
+                  {t.nama}
+                  {terkunci && <span style={{fontSize:9,color:"#f5c84288"}}>Pro</span>}
+                </button>
+              );
+            })}
           </div>
         </Seksi>
 
@@ -653,8 +720,12 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan }) {
                 <div style={{color:"#555",fontSize:11,marginTop:2}}>{settings.pin?"✅ PIN aktif":"Belum diatur"}</div>
               </div>
               <div style={{display:"flex",gap:8}}>
-                <button onClick={()=>setPinMode("buat")} style={{background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:8,padding:"8px 12px",color:"#ddd",cursor:"pointer",fontSize:12}}>
-                  {settings.pin?"Ganti":"Buat"} PIN
+                <button
+                  onClick={()=> !isPro
+                    ? onGatePro?.("Fitur PIN Keamanan tersedia untuk pengguna Pro 🔒")
+                    : setPinMode("buat")}
+                  style={{background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:8,padding:"8px 12px",color:"#ddd",cursor:"pointer",fontSize:12}}>
+                  {!isPro ? "🔒 Pro" : settings.pin?"Ganti":"Buat"} PIN
                 </button>
                 {settings.pin&&<button onClick={()=>onUbah({...settings,pin:""})} style={{background:"#1a0000",border:"1px solid #6e1010",borderRadius:8,padding:"8px 12px",color:"#e84040",cursor:"pointer",fontSize:12}}>Hapus</button>}
               </div>
@@ -730,14 +801,20 @@ function ModalPremium({ onTutup, onProAktif }) {
     {ikon:"🔗",judul:"Widget Layar Utama", desc:"Lihat catatan pinned langsung dari homescreen."},
   ];
 
-  // Muat Midtrans Snap script satu kali
+  // Muat Midtrans Snap script — cleanup saat modal tutup
   useEffect(() => {
-    if (document.getElementById("midtrans-snap")) return;
+    const existing = document.getElementById("midtrans-snap");
+    if (existing) return;
     const script = document.createElement("script");
     script.id = "midtrans-snap";
     script.src = MIDTRANS_SNAP_URL;
     script.setAttribute("data-client-key", MIDTRANS_CLIENT_KEY);
-    document.head.appendChild(script);
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      const el = document.getElementById("midtrans-snap");
+      if (el) document.body.removeChild(el);
+    };
   }, []);
 
   const handleBayar = async () => {
@@ -916,7 +993,7 @@ function TampilKalender({ catatan, onBukaCatatan }) {
 
 // ═══════════════════════ EDITOR CATATAN ══════════════════════════════════════
 
-function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings }) {
+function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings, isPro, onGatePro }) {
   const [judul,       setJudul]       = useState(catatan?.judul||"");
   const [isi,         setIsi]         = useState(catatan?.isi||"");
   const [item,        setItem]        = useState(catatan?.item||[]);
@@ -1043,10 +1120,16 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings 
         <div style={{position:"absolute",top:52,right:8,background:"#1c1c1c",border:"1px solid #2e2e2e",borderRadius:12,zIndex:200,minWidth:175,overflow:"hidden",boxShadow:"0 8px 30px #000b"}}>
           {[
             {ikon:"📌",teks:catatan?.pin?"Lepas Pin":"Pin Catatan",  aksi:()=>{onSimpan({...catatan,pin:!catatan?.pin,diubah:Date.now()});setMenuBuka(false);}},
-            {ikon:"🔔",teks:"Set Pengingat",                          aksi:()=>{setIngatBuka(true);setMenuBuka(false);}},
+            {ikon:"🔔",teks:"Set Pengingat", aksi:()=>{
+              if(!isPro){setMenuBuka(false);onGatePro?.("Fitur Pengingat tersedia untuk pengguna Pro 🔔");return;}
+              setIngatBuka(true);setMenuBuka(false);
+            }},
             {ikon:"📤",teks:"Bagikan",                                aksi:()=>{bagikan();setMenuBuka(false);}},
             {ikon:"📋",teks:"Salin Teks",                             aksi:()=>{salinTeks();setMenuBuka(false);}},
-            {ikon:"🎯",teks:"Mode Fokus",                             aksi:()=>{setModeFokus(true);setMenuBuka(false);}},
+            {ikon:"🎯",teks:"Mode Fokus", aksi:()=>{
+              if(!isPro){setMenuBuka(false);onGatePro?.("Mode Fokus membantu menulis tanpa gangguan — fitur Pro ✍️");return;}
+              setModeFokus(true);setMenuBuka(false);
+            }},
             {ikon:"🔒",teks:catatan?.kunci?"Buka Kunci":"Kunci",      aksi:()=>{onSimpan({...catatan,kunci:!catatan?.kunci,diubah:Date.now()});setMenuBuka(false);}},
             {ikon:"📦",teks:"Arsipkan",                               aksi:()=>{simpan();onArsip(catatan);setMenuBuka(false);onTutup();}},
             {ikon:"🗑️",teks:"Hapus",                                 aksi:()=>{onHapus(catatan);setMenuBuka(false);onTutup();}},
@@ -1212,7 +1295,7 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings 
           <div style={{width:16,height:16,borderRadius:"50%",background:warna.aksen,border:"2px solid #fff2"}}/>
           {warnaBuka && (
             <div style={{position:"absolute",bottom:64,left:16,background:"#1c1c1c",border:"1px solid #2e2e2e",borderRadius:12,padding:12,zIndex:200}}>
-              <PilihWarna aktif={warna} onChange={w=>{setWarna(w);setWarnaBuka(false);}}/>
+              <PilihWarna aktif={warna} onChange={w=>{setWarna(w);setWarnaBuka(false);}} isPro={isPro} onGatePro={(p)=>{setWarnaBuka(false);onGatePro?.(p);}}/>
             </div>
           )}
           {pengingat && <span style={{fontSize:11,color:"#f5c842"}}>🔔 {formatWaktu(new Date(pengingat).getTime())}</span>}
@@ -1416,6 +1499,9 @@ export default function App() {
   const [pinCheck,     setPinCheck]     = useState(!!muatSettings().pin);
   const [notif,        setNotif]        = useState(null);
   const [isPro,        setIsPro]        = useState(cekStatusPro);
+  const [gatePro,      setGatePro]      = useState(null);
+
+  const bukaGatePro = (pesan) => setGatePro(pesan);
 
   const tema = TEMA.find(t=>t.id===settings.tema)||TEMA[0];
 
@@ -1440,7 +1526,15 @@ export default function App() {
 
   const tampilNotif = (p) => { setNotif(p); setTimeout(()=>setNotif(null),2600); };
 
-  const simpanCatatan = (c) => setCatatan(p => { const i=p.findIndex(n=>n.id===c.id); return i>=0?p.map(n=>n.id===c.id?c:n):[c,...p]; });
+  const simpanCatatan = (c) => {
+    const aktif = catatan.filter(n=>!n.hapus&&!n.arsip);
+    const isNew  = !catatan.find(n=>n.id===c.id);
+    if (isNew && !isPro && aktif.length >= 20) {
+      setGatePro("Batas 20 catatan gratis tercapai. Upgrade Pro untuk catatan tak terbatas! 🚀");
+      return;
+    }
+    setCatatan(p => { const i=p.findIndex(n=>n.id===c.id); return i>=0?p.map(n=>n.id===c.id?c:n):[c,...p]; });
+  };
   const hapusCatatan  = (c) => { setCatatan(p=>p.map(n=>n.id===c.id?{...n,hapus:true}:n)); tampilNotif("Dipindah ke tong sampah"); };
   const arsipCatatan  = (c) => { setCatatan(p=>p.map(n=>n.id===c.id?{...n,arsip:true}:n)); tampilNotif("Catatan diarsipkan"); };
   const pulihkan      = (id) => { setCatatan(p=>p.map(n=>n.id===id?{...n,hapus:false,arsip:false}:n)); tampilNotif("Catatan dipulihkan"); };
@@ -1477,7 +1571,7 @@ export default function App() {
 
   // ── PENGATURAN ──
   if (showSettings) return (
-    <HalamanPengaturan settings={settings} onUbah={setSettings} onTutup={()=>setShowSettings(false)} catatan={catatan}/>
+    <HalamanPengaturan settings={settings} onUbah={setSettings} onTutup={()=>setShowSettings(false)} catatan={catatan} isPro={isPro} onGatePro={bukaGatePro}/>
   );
 
   // ── EDITOR ──
@@ -1489,6 +1583,8 @@ export default function App() {
       onHapus={hapusCatatan}
       onArsip={arsipCatatan}
       settings={settings}
+      isPro={isPro}
+      onGatePro={bukaGatePro}
     />
   );
 
@@ -1505,8 +1601,15 @@ export default function App() {
       )}
 
       {/* MODALS */}
-      {modalPro  && <ModalPremium onTutup={()=>setModalPro(false)} onProAktif={()=>setIsPro(true)}/>}
-      {modalTmpl && <ModalTemplate onPilih={t=>{setTmplDipilih(t);setModalTmpl(false);setSedangBuat(true);}} onTutup={()=>setModalTmpl(false)}/>}
+      {gatePro && (
+        <GatePro
+          pesan={gatePro}
+          onUpgrade={()=>{ setGatePro(null); setModalPro(true); }}
+          onTutup={()=>setGatePro(null)}
+        />
+      )}
+      {modalPro  && <ModalPremium onTutup={()=>setModalPro(false)} onProAktif={()=>{ setIsPro(true); setGatePro(null); }}/>}
+      {modalTmpl && <ModalTemplate onPilih={t=>{setTmplDipilih(t);setModalTmpl(false);setSedangBuat(true);}} onTutup={()=>setModalTmpl(false)} isPro={isPro} onGatePro={bukaGatePro}/>}
 
       {/* ── HEADER ── */}
       {(tampilan==="catatan"||tampilan==="cari") && (
