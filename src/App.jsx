@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { HalamanInsight, ModalVoice, ModalOCR, HalamanQuran, HalamanHadits, PanelSmartReminder } from "./ProFitur";
+import { HalamanInsight, HalamanQuran, HalamanHadits, PanelSmartReminder } from "./ProFitur";
 
 // ═══════════════════════ KONSTANTA ═══════════════════════════════════════════
 
@@ -2739,8 +2739,6 @@ export default function App() {
   const [folderFilter, setFolderFilter] = useState("semua"); // "semua" | folder.id
   const [modalFolder,  setModalFolder]  = useState(false);
   const [editFolderObj,setEditFolderObj]= useState(null);
-  const [modalVoice,   setModalVoice]   = useState(false);
-  const [modalOCR,     setModalOCR]     = useState(false);
   const [promptInstall,setPromptInstall]= useState(null); // event beforeinstallprompt
   const [showInstall,  setShowInstall]  = useState(false);
 
@@ -2856,12 +2854,6 @@ export default function App() {
     // Catatan tak terbatas untuk semua (gratis & Pro) — tidak ada batas jumlah.
     setCatatan(p => { const i=p.findIndex(n=>n.id===c.id); return i>=0?p.map(n=>n.id===c.id?c:n):[c,...p]; });
   };
-  // Buat catatan teks dari hasil AI (Voice / OCR) lalu buka langsung di editor
-  const buatCatatanDariTeks = (teks) => {
-    const c = { id:buatId(), tipe:"teks", judul:"", isi:teks||"", item:[], warna:W0, dibuat:Date.now(), diubah:Date.now() };
-    simpanCatatan(c);
-    setEditCatatan(c);
-  };
   const hapusCatatan  = (c) => { setCatatan(p=>p.map(n=>n.id===c.id?{...n,hapus:true}:n)); tampilNotif("Dipindah ke tong sampah"); };
   const arsipCatatan  = (c) => { setCatatan(p=>p.map(n=>n.id===c.id?{...n,arsip:true}:n)); tampilNotif("Catatan diarsipkan"); };
   const pulihkan      = (id) => { setCatatan(p=>p.map(n=>n.id===id?{...n,hapus:false,arsip:false}:n)); tampilNotif("Catatan dipulihkan"); };
@@ -2972,12 +2964,6 @@ export default function App() {
         onSukses={()=>{ aktifkanPro(); setIsPro(true); setGatePro(null); setModalPro(false); setNotifSukses(true); }}/>}
       {notifSukses && <NotifSukses t={t} onTutup={()=>setNotifSukses(false)}/>}
       {modalTmpl && <ModalTemplate onPilih={tp=>{setTmplDipilih(tp);setModalTmpl(false);setSedangBuat(true);}} onTutup={()=>setModalTmpl(false)} isPro={isPro} onGatePro={bukaGatePro}/>}
-      {modalVoice && <ModalVoice isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}
-        onHasil={(teks)=>{ buatCatatanDariTeks(teks); tampilNotif("🎙️ Catatan dibuat dari suara"); }}
-        onClose={()=>setModalVoice(false)}/>}
-      {modalOCR && <ModalOCR isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}
-        onHasil={(teks)=>{ buatCatatanDariTeks(teks); tampilNotif("📷 Catatan dibuat dari foto"); }}
-        onClose={()=>setModalOCR(false)}/>}
       {modalFolder && (
         <ModalBuatFolder
           editFolder={editFolderObj}
@@ -3236,10 +3222,8 @@ export default function App() {
                   setEditFolderObj(null);setModalFolder(true);
                 }},
                 {ikon:"🧠",lab:"Insight AI",aksi:()=>{ if(!isPro){bukaGatePro("AI Weekly Insight tersedia untuk pengguna Pro 🧠");return;} setTampilan("insight"); }},
-                {ikon:"📖",lab:"Al-Quran",aksi:()=>{ if(!isPro){bukaGatePro("Al-Quran (terjemahan Kemenag) tersedia untuk pengguna Pro 📖");return;} setTampilan("quran"); }},
-                {ikon:"📜",lab:"Hadits Shahih",aksi:()=>{ if(!isPro){bukaGatePro("Hadits Shahih (HadeethEnc) tersedia untuk pengguna Pro 📜");return;} setTampilan("hadits"); }},
-                {ikon:"🎙️",lab:"Voice → Catatan",aksi:()=>{ if(!isPro){bukaGatePro("Voice → Catatan tersedia untuk pengguna Pro 🎙️");return;} setModalVoice(true); }},
-                {ikon:"📷",lab:"Scan → Catatan",aksi:()=>{ if(!isPro){bukaGatePro("Scan → Catatan (OCR) tersedia untuk pengguna Pro 📷");return;} setModalOCR(true); }},
+                {ikon:"📖",lab:"Al-Quran",aksi:()=>setTampilan("quran")},
+                {ikon:"📜",lab:"Hadits Shahih",aksi:()=>setTampilan("hadits")},
             {ikon:"⚡",lab:"Template",  aksi:()=>setModalTmpl(true)},
                 {ikon:"⚙️",lab:"Pengaturan",aksi:()=>setShowSettings(true)},
                 {ikon:"📤",lab:"Ekspor",    aksi:()=>{
@@ -3318,8 +3302,6 @@ export default function App() {
           {[
             {ikon:"📝",lab:"Teks biasa",    aksi:()=>{setTipeBaru("teks");setSedangBuat(true);setMenuTambah(false);}},
             {ikon:"☑️",lab:"Daftar ceklis", aksi:()=>{setTipeBaru("ceklis");setSedangBuat(true);setMenuTambah(false);}},
-            {ikon:"🎙️",lab:"Voice → Catatan", aksi:()=>{setMenuTambah(false); if(!isPro){bukaGatePro("Voice → Catatan tersedia untuk pengguna Pro 🎙️");return;} setModalVoice(true);}},
-            {ikon:"📷",lab:"Scan → Catatan",  aksi:()=>{setMenuTambah(false); if(!isPro){bukaGatePro("Scan → Catatan (OCR) tersedia untuk pengguna Pro 📷");return;} setModalOCR(true);}},
             {ikon:"⚡",lab:"Dari template", aksi:()=>{setMenuTambah(false);setModalTmpl(true);}},
           ].map(b=>(
             <button key={b.lab} onClick={b.aksi}
