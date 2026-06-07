@@ -18,6 +18,31 @@ async function panggilAI(payload) {
   return data.hasil;
 }
 
+// Helper: parse JSON dari respons AI yang kadang dibungkus prosa / markdown / sedikit kepotong.
+function parseJSONLonggar(raw) {
+  let s = (raw || "").replace(/```json/gi, "").replace(/```/g, "").trim();
+  const a = s.indexOf("{");
+  const b = s.lastIndexOf("}");
+  if (a >= 0 && b > a) s = s.slice(a, b + 1);
+  try {
+    return JSON.parse(s);
+  } catch {
+    // Salvage: kalau string array kepotong, potong sampai objek lengkap terakhir lalu tutup.
+    const lastObj = s.lastIndexOf("}");
+    if (lastObj > 0) {
+      let repaired = s.slice(0, lastObj + 1);
+      const openArr = (repaired.match(/\[/g) || []).length;
+      const closeArr = (repaired.match(/\]/g) || []).length;
+      if (openArr > closeArr) repaired += "]";
+      const openObj = (repaired.match(/\{/g) || []).length;
+      const closeObj = (repaired.match(/\}/g) || []).length;
+      if (openObj > closeObj) repaired += "}";
+      return JSON.parse(repaired);
+    }
+    throw new Error("Format jawaban AI tidak valid. Coba generate ulang.");
+  }
+}
+
 // Helper: ringkasan catatan (dipakai weeklyInsight & smartReminder)
 function ringkasan(catatan, max = 30) {
   return (catatan || [])
@@ -323,10 +348,7 @@ export function PanelQuranRef({ topik, isPro, onGatePro, t, tema }) {
     setData(null);
     try {
       const raw = await panggilAI({ mode: "quranRef", teks: topik });
-      // Parse JSON (kadang ada ```json wrapper)
-      const clean = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(clean);
-      setData(parsed);
+      setData(parseJSONLonggar(raw));
     } catch (e) {
       setErr(e.message);
     }
@@ -386,9 +408,7 @@ export function PanelSmartReminder({ catatan, isPro, onGatePro, t, tema }) {
     setData(null);
     try {
       const raw = await panggilAI({ mode: "smartReminder", semuaCatatan: ringkasan(catatan) });
-      const clean = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(clean);
-      setData(parsed);
+      setData(parseJSONLonggar(raw));
     } catch (e) {
       setErr(e.message);
     }

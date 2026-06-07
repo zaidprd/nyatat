@@ -34,6 +34,19 @@ const SYSTEM_PROMPT = {
     "Kamu asisten yang membuat judul catatan pendek (maks 5 kata) dan rapi. Balas HANYA judulnya saja, tanpa tanda kutip, tanpa penjelasan.",
 };
 
+// Batas token output per mode. Default Cloudflare hanya 256 → JSON/insight panjang kepotong.
+const MAX_TOKENS = {
+  quranRef: 1500,
+  smartReminder: 1500,
+  weeklyInsight: 1500,
+  tanya: 1024,
+  rapikan: 1024,
+  buatCatatan: 1024,
+  ringkasanVoice: 1024,
+  ringkasanOCR: 1024,
+  ringkasanJudul: 60,
+};
+
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
@@ -133,7 +146,7 @@ exports.handler = async (event) => {
         "Authorization": `Bearer ${apiToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, max_tokens: MAX_TOKENS[mode] || 1024 }),
     });
 
     if (!res.ok) {
