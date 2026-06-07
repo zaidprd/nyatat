@@ -337,6 +337,16 @@ const QURAN_API = "/.netlify/functions/quran";
 // Font bergaya Mushaf Madinah (Uthmani). Teks dari alquran.cloud sudah Uthmani (Mushaf Madinah).
 const FONT_ARAB = "'Amiri Quran','Traditional Arabic','Scheherazade New',serif";
 
+// Qori murottal (audio gratis dari cdn.islamic.network)
+const QORI = [
+  { id: "ar.sudais", nama: "As-Sudais" },
+  { id: "ar.alafasy", nama: "Al-Afasy" },
+  { id: "ar.abdulbasitmurattal", nama: "Abdul Basit" },
+  { id: "ar.husary", nama: "Al-Hushary" },
+  { id: "ar.minshawi", nama: "Al-Minshawi" },
+];
+const urlAudio = (qori, globalNo) => `https://cdn.islamic.network/quran/audio/128/${qori}/${globalNo}.mp3`;
+
 export function HalamanQuran({ t, tema }) {
   const aksen = tema?.aksen || "#28c0b6";
   const [surat, setSurat] = useState([]);
@@ -351,8 +361,17 @@ export function HalamanQuran({ t, tema }) {
     try { return JSON.parse(localStorage.getItem("kp_quran_terakhir") || "null"); } catch { return null; }
   });
   const [ayatDitandai, setAyatDitandai] = useState(null); // nomor ayat yang ditandai di surah aktif
+  const [qori, setQori] = useState(() => {
+    try { return localStorage.getItem("kp_quran_qori") || "ar.sudais"; } catch { return "ar.sudais"; }
+  });
+  const [mainAyat, setMainAyat] = useState(null); // nomor ayat yang sedang diputar
   const gotoAyahRef = useRef(null);
   const terakhirRef = useRef(terakhir);
+  const audioRef = useRef(null);
+
+  useEffect(() => { try { localStorage.setItem("kp_quran_qori", qori); } catch {} }, [qori]);
+  // Hentikan audio saat keluar komponen
+  useEffect(() => () => { try { audioRef.current?.pause(); } catch {} }, []);
 
   useEffect(() => { try { localStorage.setItem("kp_quran_terjemah", terjemah ? "1" : "0"); } catch {} }, [terjemah]);
 
@@ -391,6 +410,7 @@ export function HalamanQuran({ t, tema }) {
       const indo = eds.find((e) => e.edition?.identifier === "id.indonesian") || eds[1];
       const ayat = (arab?.ayahs || []).map((a, i) => ({
         no: a.numberInSurah,
+        global: a.number,        // nomor ayat global (1-6236) untuk URL audio
         arab: a.text,
         indo: indo?.ayahs?.[i]?.text || "",
       }));
@@ -410,7 +430,32 @@ export function HalamanQuran({ t, tema }) {
     setTerakhir(terakhirRef.current);
   };
 
+  // ── AUDIO MUROTTAL ──
+  const getAudio = () => {
+    if (!audioRef.current) audioRef.current = new Audio();
+    return audioRef.current;
+  };
+  const putarAyat = (ayat, lanjut) => {
+    if (!ayat) { setMainAyat(null); return; }
+    const au = getAudio();
+    au.src = urlAudio(qori, ayat.global);
+    au.onended = () => {
+      if (lanjut) {
+        const idx = pilih.ayat.findIndex((x) => x.no === ayat.no);
+        putarAyat(pilih.ayat[idx + 1], true);
+      } else setMainAyat(null);
+    };
+    au.onerror = () => setMainAyat(null);
+    au.play().catch(() => setMainAyat(null));
+    setMainAyat(ayat.no);
+    document.getElementById(`ayat-${ayat.no}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+  const stopAudio = () => { try { audioRef.current?.pause(); } catch {} setMainAyat(null); };
+  const toggleAyat = (ayat) => { mainAyat === ayat.no ? stopAudio() : putarAyat(ayat, false); };
+  const putarSurah = () => { mainAyat ? stopAudio() : putarAyat(pilih.ayat[0], true); };
+
   const kembaliKeDaftar = () => {
+    stopAudio();
     setPilih(null);
     setTerakhir(terakhirRef.current); // refresh banner "lanjutkan membaca"
   };
@@ -453,6 +498,14 @@ export function HalamanQuran({ t, tema }) {
               {terjemah ? "✓ Terjemahan" : "Terjemahan"}
             </button>
           </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={putarSurah} style={{ background: mainAyat ? "#5a0e0e" : aksen, border: "none", borderRadius: 10, padding: "8px 14px", color: mainAyat ? "#fff" : "#000", fontSize: 12, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>
+              {mainAyat ? "⏹️ Berhenti" : "▶️ Putar Surah"}
+            </button>
+            <select value={qori} onChange={(e) => { stopAudio(); setQori(e.target.value); }} style={{ flex: 1, background: t.input, border: `1px solid ${t.border}`, borderRadius: 10, padding: "8px 12px", color: t.teks, fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none" }}>
+              {QORI.map((q) => <option key={q.id} value={q.id}>🎙️ {q.nama}</option>)}
+            </select>
+          </div>
           <div style={{ background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 14, padding: 16, textAlign: "center" }}>
             <div style={{ color: t.teks, fontSize: 26, fontWeight: 800, fontFamily: FONT_ARAB }}>{pilih.info.name}</div>
             <div style={{ color: aksen, fontSize: 15, fontWeight: 700, marginTop: 4 }}>{pilih.info.englishName}</div>
@@ -461,10 +514,15 @@ export function HalamanQuran({ t, tema }) {
           {pilih.ayat.map((a) => (
             <div key={a.no} id={`ayat-${a.no}`} data-ayah={a.no} style={{ background: ayatDitandai === a.no ? `${aksen}14` : t.kartu, border: `1px solid ${ayatDitandai === a.no ? aksen : t.border}`, borderRadius: 12, padding: 14, scrollMarginTop: 70 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <button onClick={() => tandai(a.no)} title="Tandai terakhir dibaca" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: ayatDitandai === a.no ? aksen : t.muted, display: "flex", alignItems: "center", gap: 5, padding: 0 }}>
-                  🔖 {ayatDitandai === a.no ? "Terakhir dibaca" : "Tandai"}
-                </button>
-                <span style={{ width: 26, height: 26, borderRadius: "50%", background: aksen, color: "#000", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{a.no}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <button onClick={() => toggleAyat(a)} title="Putar ayat" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 15, color: mainAyat === a.no ? aksen : t.muted, padding: 0 }}>
+                    {mainAyat === a.no ? "⏸️" : "▶️"}
+                  </button>
+                  <button onClick={() => tandai(a.no)} title="Tandai terakhir dibaca" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: ayatDitandai === a.no ? aksen : t.muted, display: "flex", alignItems: "center", gap: 5, padding: 0 }}>
+                    🔖 {ayatDitandai === a.no ? "Terakhir dibaca" : "Tandai"}
+                  </button>
+                </div>
+                <span style={{ width: 26, height: 26, borderRadius: "50%", background: mainAyat === a.no ? aksen : aksen, color: "#000", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{a.no}</span>
               </div>
               <div style={{ color: t.teks, fontSize: 25, lineHeight: 2.3, textAlign: "right", fontFamily: FONT_ARAB, direction: "rtl", marginBottom: terjemah ? 10 : 0 }}>{a.arab}</div>
               {terjemah && <div style={{ color: t.subteks, fontSize: 14, lineHeight: 1.7 }}>{a.indo}</div>}
