@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { HalamanInsight, ModalVoice, ModalOCR, PanelQuranRef, PanelSmartReminder } from "./ProFitur";
 
 // ═══════════════════════ KONSTANTA ═══════════════════════════════════════════
 
@@ -1758,6 +1759,10 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
               {aiLoading?"⏳":"✨"} AI
             </button>
           </div>
+          {/* Referensi Quran/Hadits (Pro) — pakai judul/isi sebagai topik */}
+          <div style={{marginLeft:6,flexShrink:0}}>
+            <PanelQuranRef topik={judul||teksBersih} isPro={isPro} onGatePro={onGatePro} t={t} tema={warna}/>
+          </div>
         </div>
       )}
 
@@ -2738,6 +2743,10 @@ export default function App() {
   const [folderFilter, setFolderFilter] = useState("semua"); // "semua" | folder.id
   const [modalFolder,  setModalFolder]  = useState(false);
   const [editFolderObj,setEditFolderObj]= useState(null);
+  const [modalVoice,   setModalVoice]   = useState(false);
+  const [modalOCR,     setModalOCR]     = useState(false);
+  const [promptInstall,setPromptInstall]= useState(null); // event beforeinstallprompt
+  const [showInstall,  setShowInstall]  = useState(false);
 
   const bukaGatePro = (pesan) => setGatePro(pesan);
 
@@ -2803,6 +2812,30 @@ export default function App() {
     document.body.style.background = tema.bg;
   }, [tema]);
 
+  // Banner "Pasang aplikasi" (PWA) — tangkap event beforeinstallprompt
+  useEffect(() => {
+    const sudahStandalone = window.matchMedia?.("(display-mode: standalone)")?.matches
+      || window.navigator.standalone === true;
+    if (sudahStandalone || localStorage.getItem("kp_install_tutup") === "1") return;
+    const onPrompt = (e) => {
+      e.preventDefault();
+      setPromptInstall(e);
+      setShowInstall(true);
+    };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", () => { setShowInstall(false); setPromptInstall(null); });
+    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+  }, []);
+
+  const pasangApp = async () => {
+    if (!promptInstall) return;
+    promptInstall.prompt();
+    try { await promptInstall.userChoice; } catch {}
+    setPromptInstall(null);
+    setShowInstall(false);
+  };
+  const tutupInstall = () => { setShowInstall(false); localStorage.setItem("kp_install_tutup","1"); };
+
   // Proteksi ringan (deterrent): cegah klik-kanan & shortcut inspect.
   // Catatan: kode sisi-klien tidak bisa 100% dicegah; kunci utama (API key) sudah di server.
   useEffect(() => {
@@ -2826,6 +2859,12 @@ export default function App() {
   const simpanCatatan = (c) => {
     // Catatan tak terbatas untuk semua (gratis & Pro) — tidak ada batas jumlah.
     setCatatan(p => { const i=p.findIndex(n=>n.id===c.id); return i>=0?p.map(n=>n.id===c.id?c:n):[c,...p]; });
+  };
+  // Buat catatan teks dari hasil AI (Voice / OCR) lalu buka langsung di editor
+  const buatCatatanDariTeks = (teks) => {
+    const c = { id:buatId(), tipe:"teks", judul:"", isi:teks||"", item:[], warna:W0, dibuat:Date.now(), diubah:Date.now() };
+    simpanCatatan(c);
+    setEditCatatan(c);
   };
   const hapusCatatan  = (c) => { setCatatan(p=>p.map(n=>n.id===c.id?{...n,hapus:true}:n)); tampilNotif("Dipindah ke tong sampah"); };
   const arsipCatatan  = (c) => { setCatatan(p=>p.map(n=>n.id===c.id?{...n,arsip:true}:n)); tampilNotif("Catatan diarsipkan"); };
@@ -2910,6 +2949,19 @@ export default function App() {
         </div>
       )}
 
+      {/* BANNER PASANG APLIKASI (PWA) */}
+      {showInstall && (
+        <div style={{position:"fixed",bottom:140,left:"50%",transform:"translateX(-50%)",width:"calc(100% - 32px)",maxWidth:448,background:t.nav,border:`1px solid ${tema.aksen}55`,borderRadius:14,padding:"12px 14px",zIndex:80,display:"flex",alignItems:"center",gap:12,boxShadow:"0 8px 30px #000b"}}>
+          <span style={{fontSize:26}}>📲</span>
+          <div style={{flex:1}}>
+            <div style={{color:t.teks,fontWeight:700,fontSize:13}}>Pasang KapurPad</div>
+            <div style={{color:t.subteks,fontSize:11,marginTop:2}}>Akses cepat layar penuh, tanpa browser</div>
+          </div>
+          <button onClick={pasangApp} style={{background:tema.aksen,border:"none",borderRadius:9,padding:"8px 14px",color:"#000",fontWeight:800,fontSize:12,cursor:"pointer",flexShrink:0}}>Pasang</button>
+          <button onClick={tutupInstall} style={{background:"none",border:"none",color:t.muted,fontSize:20,cursor:"pointer",flexShrink:0}}>×</button>
+        </div>
+      )}
+
       {/* MODALS */}
       {gatePro && (
         <GatePro
@@ -2924,6 +2976,12 @@ export default function App() {
         onSukses={()=>{ aktifkanPro(); setIsPro(true); setGatePro(null); setModalPro(false); setNotifSukses(true); }}/>}
       {notifSukses && <NotifSukses t={t} onTutup={()=>setNotifSukses(false)}/>}
       {modalTmpl && <ModalTemplate onPilih={tp=>{setTmplDipilih(tp);setModalTmpl(false);setSedangBuat(true);}} onTutup={()=>setModalTmpl(false)} isPro={isPro} onGatePro={bukaGatePro}/>}
+      {modalVoice && <ModalVoice isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}
+        onHasil={(teks)=>{ buatCatatanDariTeks(teks); tampilNotif("🎙️ Catatan dibuat dari suara"); }}
+        onClose={()=>setModalVoice(false)}/>}
+      {modalOCR && <ModalOCR isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}
+        onHasil={(teks)=>{ buatCatatanDariTeks(teks); tampilNotif("📷 Catatan dibuat dari foto"); }}
+        onClose={()=>setModalOCR(false)}/>}
       {modalFolder && (
         <ModalBuatFolder
           editFolder={editFolderObj}
@@ -3040,6 +3098,12 @@ export default function App() {
           <span style={{fontSize:18,fontWeight:800,color:t.teks}}>📊 Laporan Mingguan</span>
         </div>
       )}
+      {tampilan==="insight" && (
+        <div style={{position:"sticky",top:0,zIndex:50,background:t.nav,padding:"14px 16px",borderBottom:`1px solid ${t.border}`,display:"flex",alignItems:"center",gap:10}}>
+          <button onClick={()=>setTampilan("menu")} style={{background:"none",border:"none",color:tema.aksen,fontSize:20,cursor:"pointer"}}>←</button>
+          <span style={{fontSize:18,fontWeight:800,color:t.teks}}>🧠 AI Insight Mingguan</span>
+        </div>
+      )}
 
       {/* ── KONTEN ── */}
       <div style={{paddingBottom:84}}>
@@ -3114,6 +3178,7 @@ export default function App() {
         {tampilan==="dzikir"   && <HalamanDzikir catatan={catatan} onBukaCatatan={c=>setEditCatatan(c)} simpanCatatan={simpanCatatan} t={t} tema={tema}/>}
         {tampilan==="tanyaai"  && <HalamanTanyaAI catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
         {tampilan==="laporan"  && <HalamanLaporan catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
+        {tampilan==="insight"  && <HalamanInsight catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
 
         {tampilan==="menu" && (
           <div style={{padding:16}}>
@@ -3160,7 +3225,8 @@ export default function App() {
                   if(!isPro){bukaGatePro("Folder & Kategori tersedia untuk pengguna Pro 📁");return;}
                   setEditFolderObj(null);setModalFolder(true);
                 }},
-                {ikon:"⚡",lab:"Template",  aksi:()=>setModalTmpl(true)},
+                {ikon:"🧠",lab:"Insight AI",aksi:()=>{ if(!isPro){bukaGatePro("AI Weekly Insight tersedia untuk pengguna Pro 🧠");return;} setTampilan("insight"); }},
+            {ikon:"⚡",lab:"Template",  aksi:()=>setModalTmpl(true)},
                 {ikon:"⚙️",lab:"Pengaturan",aksi:()=>setShowSettings(true)},
                 {ikon:"📤",lab:"Ekspor",    aksi:()=>{
                   const d=JSON.stringify(catatan,null,2);
@@ -3179,6 +3245,8 @@ export default function App() {
                 </button>
               ))}
             </div>
+
+            <PanelSmartReminder catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>
 
             <div style={{background:t.kartu,border:`1px solid ${t.border}`,borderRadius:14,padding:16,marginBottom:12}}>
               <div style={{color:t.subteks,fontSize:11,fontWeight:700,marginBottom:12,letterSpacing:1}}>STATISTIK</div>
@@ -3236,6 +3304,8 @@ export default function App() {
           {[
             {ikon:"📝",lab:"Teks biasa",    aksi:()=>{setTipeBaru("teks");setSedangBuat(true);setMenuTambah(false);}},
             {ikon:"☑️",lab:"Daftar ceklis", aksi:()=>{setTipeBaru("ceklis");setSedangBuat(true);setMenuTambah(false);}},
+            {ikon:"🎙️",lab:"Voice → Catatan", aksi:()=>{setMenuTambah(false); if(!isPro){bukaGatePro("Voice → Catatan tersedia untuk pengguna Pro 🎙️");return;} setModalVoice(true);}},
+            {ikon:"📷",lab:"Scan → Catatan",  aksi:()=>{setMenuTambah(false); if(!isPro){bukaGatePro("Scan → Catatan (OCR) tersedia untuk pengguna Pro 📷");return;} setModalOCR(true);}},
             {ikon:"⚡",lab:"Dari template", aksi:()=>{setMenuTambah(false);setModalTmpl(true);}},
           ].map(b=>(
             <button key={b.lab} onClick={b.aksi}

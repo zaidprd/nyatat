@@ -19,6 +19,10 @@
       * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
       body { background: #f0ede8; overflow-x: hidden; }
       #root { max-width: 480px; margin: 0 auto; min-height: 100dvh; }
+      /* Tap responsif (hilangkan delay 300ms) di tombol & elemen interaktif */
+      button, [role="button"], a, input, textarea, [contenteditable] { touch-action: manipulation; }
+      /* Pastikan teks pada input & area tulis tetap bisa diseleksi/disalin */
+      input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; }
     </style>
   </head>
   <body>
