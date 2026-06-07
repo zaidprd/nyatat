@@ -329,20 +329,20 @@ export function ModalOCR({ isPro, onGatePro, onHasil, t, tema, onClose }) {
   );
 }
 
-// ═══════════════════════ 6) QURAN/HADITS REFERENCE ═════════════════════════
-export function PanelQuranRef({ topik, isPro, onGatePro, t, tema }) {
-  const [buka, setBuka] = useState(false);
+// ═══════════════════════ 6) QURAN/HADITS REFERENCE (HALAMAN SENDIRI) ════════
+export function HalamanQuranRef({ isPro, onGatePro, t, tema }) {
+  const [topik, setTopik] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
+  const aksen = tema?.aksen || "#28c0b6";
 
   const cari = async () => {
     if (!isPro) {
       onGatePro?.("Referensi Quran/Hadits tersedia untuk pengguna Pro 📖");
       return;
     }
-    if (!topik?.trim()) return;
-    setBuka(true);
+    if (!topik.trim()) return;
     setLoading(true);
     setErr("");
     setData(null);
@@ -355,38 +355,64 @@ export function PanelQuranRef({ topik, isPro, onGatePro, t, tema }) {
     setLoading(false);
   };
 
+  const SARAN = ["sabar", "rezeki", "syukur", "makanan halal", "menuntut ilmu", "berbakti pada orang tua"];
+
   return (
-    <>
-      <button onClick={cari} title="Cari ayat/hadits terkait" style={{ background: "none", border: `1px solid ${t.border}`, borderRadius: 8, padding: "4px 9px", color: tema?.aksen || "#28c0b6", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
-        📖 Ayat
-      </button>
-      {buka && (
-        <div onClick={() => setBuka(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, maxHeight: "80vh", overflow: "auto", background: t.nav, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 18, paddingBottom: 28, display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ color: t.teks, fontWeight: 800, fontSize: 16 }}>📖 Referensi untuk "{topik?.slice(0, 30)}{topik?.length > 30 ? "…" : ""}"</div>
-              <button onClick={() => setBuka(false)} style={{ background: "none", border: "none", color: t.muted, fontSize: 22, cursor: "pointer" }}>×</button>
-            </div>
-            {loading && <div style={{ textAlign: "center", padding: 24, color: t.subteks }}>⏳ Mencari ayat & hadits…</div>}
-            {err && <div style={{ color: "#e84040", fontSize: 13 }}>❌ {err}</div>}
-            {data?.rekomendasi?.map((r, i) => (
-              <div key={i} style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: r.jenis === "quran" ? "#0d5c2a" : "#7a3800", color: "#fff", fontWeight: 700 }}>
-                    {r.jenis === "quran" ? "QURAN" : "HADITS"}
-                  </span>
-                  <span style={{ color: tema?.aksen, fontSize: 12, fontWeight: 700 }}>{r.sumber}</span>
-                </div>
-                {r.arab && <div style={{ color: t.teks, fontSize: 17, lineHeight: 1.9, textAlign: "right", fontFamily: "Georgia, serif", marginBottom: 6, direction: "rtl" }}>{r.arab}</div>}
-                <div style={{ color: t.teks, fontSize: 14, lineHeight: 1.6, fontStyle: "italic", marginBottom: 8 }}>"{r.arti}"</div>
-                <div style={{ color: t.subteks, fontSize: 12, lineHeight: 1.5, borderTop: `1px solid ${t.border}`, paddingTop: 8 }}>💡 {r.relevansi}</div>
-              </div>
-            ))}
-            <div style={{ color: t.muted, fontSize: 11, textAlign: "center" }}>Pastikan validasi ke sumber terpercaya (quran.com / hadits.id).</div>
-          </div>
+    <div style={{ padding: 16 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <input
+          value={topik}
+          onChange={(e) => setTopik(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && cari()}
+          placeholder="Topik / kata kunci…"
+          style={{ flex: 1, background: t.input, border: `1px solid ${t.border}`, borderRadius: 10, padding: "12px 14px", color: t.teks, fontSize: 14, outline: "none" }}
+        />
+        <button onClick={cari} disabled={loading || !topik.trim()} style={{ background: aksen, border: "none", borderRadius: 10, padding: "0 18px", color: "#000", fontWeight: 800, fontSize: 14, cursor: loading ? "wait" : "pointer", opacity: loading || !topik.trim() ? 0.5 : 1 }}>
+          {loading ? "⏳" : "Cari"}
+        </button>
+      </div>
+
+      {/* Chip saran topik */}
+      {!data && !loading && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+          {SARAN.map((s) => (
+            <button key={s} onClick={() => { setTopik(s); setTimeout(cari, 0); }} style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 20, padding: "6px 12px", color: t.subteks, fontSize: 12, cursor: "pointer" }}>
+              {s}
+            </button>
+          ))}
         </div>
       )}
-    </>
+
+      {!isPro && (
+        <div style={{ background: "#191200", border: "1px solid #f5c84244", borderRadius: 12, padding: 14, marginBottom: 14, textAlign: "center" }}>
+          <div style={{ color: "#f5c842", fontSize: 13, fontWeight: 700 }}>👑 Fitur Pro</div>
+          <div style={{ color: "#888", fontSize: 12, marginTop: 4 }}>Upgrade Pro untuk mencari referensi ayat & hadits</div>
+        </div>
+      )}
+
+      {loading && <div style={{ textAlign: "center", padding: 28, color: t.subteks }}>⏳ Mencari ayat & hadits…</div>}
+      {err && !loading && <div style={{ background: "#2a0e0e", border: "1px solid #5a1010", borderRadius: 12, padding: 14, color: "#e84040", fontSize: 13 }}>❌ {err}</div>}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {data?.rekomendasi?.map((r, i) => (
+          <div key={i} style={{ background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, background: r.jenis === "quran" ? "#0d5c2a" : "#7a3800", color: "#fff", fontWeight: 700 }}>
+                {r.jenis === "quran" ? "QURAN" : "HADITS"}
+              </span>
+              <span style={{ color: aksen, fontSize: 12, fontWeight: 700 }}>{r.sumber}</span>
+            </div>
+            {r.arab && <div style={{ color: t.teks, fontSize: 17, lineHeight: 1.9, textAlign: "right", fontFamily: "Georgia, serif", marginBottom: 6, direction: "rtl" }}>{r.arab}</div>}
+            <div style={{ color: t.teks, fontSize: 14, lineHeight: 1.6, fontStyle: "italic", marginBottom: 8 }}>"{r.arti}"</div>
+            <div style={{ color: t.subteks, fontSize: 12, lineHeight: 1.5, borderTop: `1px solid ${t.border}`, paddingTop: 8 }}>💡 {r.relevansi}</div>
+          </div>
+        ))}
+      </div>
+
+      {data?.rekomendasi?.length > 0 && (
+        <div style={{ color: t.muted, fontSize: 11, textAlign: "center", marginTop: 14 }}>⚠️ AI bisa keliru. Selalu validasi ke sumber terpercaya (quran.com / hadits.id).</div>
+      )}
+    </div>
   );
 }
 

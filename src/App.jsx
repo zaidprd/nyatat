@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { HalamanInsight, ModalVoice, ModalOCR, PanelQuranRef, PanelSmartReminder } from "./ProFitur";
+import { HalamanInsight, ModalVoice, ModalOCR, HalamanQuranRef, PanelSmartReminder } from "./ProFitur";
 
 // ═══════════════════════ KONSTANTA ═══════════════════════════════════════════
 
@@ -1759,10 +1759,6 @@ function EditorCatatan({ catatan, onSimpan, onTutup, onHapus, onArsip, settings,
               {aiLoading?"⏳":"✨"} AI
             </button>
           </div>
-          {/* Referensi Quran/Hadits (Pro) — pakai judul/isi sebagai topik */}
-          <div style={{marginLeft:6,flexShrink:0}}>
-            <PanelQuranRef topik={judul||teksBersih} isPro={isPro} onGatePro={onGatePro} t={t} tema={warna}/>
-          </div>
         </div>
       )}
 
@@ -3104,6 +3100,12 @@ export default function App() {
           <span style={{fontSize:18,fontWeight:800,color:t.teks}}>🧠 AI Insight Mingguan</span>
         </div>
       )}
+      {tampilan==="quran" && (
+        <div style={{position:"sticky",top:0,zIndex:50,background:t.nav,padding:"14px 16px",borderBottom:`1px solid ${t.border}`,display:"flex",alignItems:"center",gap:10}}>
+          <button onClick={()=>setTampilan("menu")} style={{background:"none",border:"none",color:tema.aksen,fontSize:20,cursor:"pointer"}}>←</button>
+          <span style={{fontSize:18,fontWeight:800,color:t.teks}}>📖 Ayat & Hadits</span>
+        </div>
+      )}
 
       {/* ── KONTEN ── */}
       <div style={{paddingBottom:84}}>
@@ -3179,6 +3181,7 @@ export default function App() {
         {tampilan==="tanyaai"  && <HalamanTanyaAI catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
         {tampilan==="laporan"  && <HalamanLaporan catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
         {tampilan==="insight"  && <HalamanInsight catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
+        {tampilan==="quran"    && <HalamanQuranRef isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
 
         {tampilan==="menu" && (
           <div style={{padding:16}}>
@@ -3226,6 +3229,9 @@ export default function App() {
                   setEditFolderObj(null);setModalFolder(true);
                 }},
                 {ikon:"🧠",lab:"Insight AI",aksi:()=>{ if(!isPro){bukaGatePro("AI Weekly Insight tersedia untuk pengguna Pro 🧠");return;} setTampilan("insight"); }},
+                {ikon:"📖",lab:"Ayat & Hadits",aksi:()=>{ if(!isPro){bukaGatePro("Referensi Quran/Hadits tersedia untuk pengguna Pro 📖");return;} setTampilan("quran"); }},
+                {ikon:"🎙️",lab:"Voice → Catatan",aksi:()=>{ if(!isPro){bukaGatePro("Voice → Catatan tersedia untuk pengguna Pro 🎙️");return;} setModalVoice(true); }},
+                {ikon:"📷",lab:"Scan → Catatan",aksi:()=>{ if(!isPro){bukaGatePro("Scan → Catatan (OCR) tersedia untuk pengguna Pro 📷");return;} setModalOCR(true); }},
             {ikon:"⚡",lab:"Template",  aksi:()=>setModalTmpl(true)},
                 {ikon:"⚙️",lab:"Pengaturan",aksi:()=>setShowSettings(true)},
                 {ikon:"📤",lab:"Ekspor",    aksi:()=>{
