@@ -350,6 +350,7 @@ export function HalamanQuran({ t, tema }) {
   const [terakhir, setTerakhir] = useState(() => {
     try { return JSON.parse(localStorage.getItem("kp_quran_terakhir") || "null"); } catch { return null; }
   });
+  const [ayatDitandai, setAyatDitandai] = useState(null); // nomor ayat yang ditandai di surah aktif
   const gotoAyahRef = useRef(null);
   const terakhirRef = useRef(terakhir);
 
@@ -394,7 +395,7 @@ export function HalamanQuran({ t, tema }) {
         indo: indo?.ayahs?.[i]?.text || "",
       }));
       setPilih({ info: s, ayat });
-      persistTerakhir(s, gotoAyah || 1);
+      setAyatDitandai(terakhirRef.current?.number === s.number ? terakhirRef.current.ayah : null);
       if (!gotoAyah) window.scrollTo?.(0, 0);
     } catch {
       setErr("Gagal memuat ayat.");
@@ -402,12 +403,19 @@ export function HalamanQuran({ t, tema }) {
     setLoading(false);
   };
 
+  // Tandai ayat sebagai "terakhir dibaca" (eksplisit, saat di-klik)
+  const tandai = (ayah) => {
+    persistTerakhir(pilih.info, ayah);
+    setAyatDitandai(ayah);
+    setTerakhir(terakhirRef.current);
+  };
+
   const kembaliKeDaftar = () => {
     setPilih(null);
     setTerakhir(terakhirRef.current); // refresh banner "lanjutkan membaca"
   };
 
-  // Setelah surah tampil: scroll ke ayat tujuan + lacak ayat yang sedang dibaca (IntersectionObserver)
+  // Setelah surah tampil: scroll ke ayat tujuan (saat "lanjutkan membaca")
   useEffect(() => {
     if (!pilih) return;
     if (gotoAyahRef.current && gotoAyahRef.current > 1) {
@@ -415,15 +423,6 @@ export function HalamanQuran({ t, tema }) {
       setTimeout(() => document.getElementById(`ayat-${target}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
     }
     gotoAyahRef.current = null;
-
-    const els = document.querySelectorAll("[data-ayah]");
-    if (!els.length) return;
-    const obs = new IntersectionObserver((entries) => {
-      const terlihat = entries.filter((e) => e.isIntersecting).map((e) => Number(e.target.getAttribute("data-ayah")));
-      if (terlihat.length) persistTerakhir(pilih.info, Math.min(...terlihat));
-    }, { rootMargin: "-12% 0px -75% 0px", threshold: 0 });
-    els.forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
   }, [pilih]);
 
   const terfilter = surat.filter((s) => {
@@ -460,8 +459,11 @@ export function HalamanQuran({ t, tema }) {
             <div style={{ color: t.subteks, fontSize: 12, marginTop: 4 }}>{pilih.info.englishNameTranslation} · {pilih.info.numberOfAyahs} ayat · {pilih.info.revelationType === "Meccan" ? "Makkiyah" : "Madaniyah"}</div>
           </div>
           {pilih.ayat.map((a) => (
-            <div key={a.no} id={`ayat-${a.no}`} data-ayah={a.no} style={{ background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14, scrollMarginTop: 70 }}>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+            <div key={a.no} id={`ayat-${a.no}`} data-ayah={a.no} style={{ background: ayatDitandai === a.no ? `${aksen}14` : t.kartu, border: `1px solid ${ayatDitandai === a.no ? aksen : t.border}`, borderRadius: 12, padding: 14, scrollMarginTop: 70 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <button onClick={() => tandai(a.no)} title="Tandai terakhir dibaca" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: ayatDitandai === a.no ? aksen : t.muted, display: "flex", alignItems: "center", gap: 5, padding: 0 }}>
+                  🔖 {ayatDitandai === a.no ? "Terakhir dibaca" : "Tandai"}
+                </button>
                 <span style={{ width: 26, height: 26, borderRadius: "50%", background: aksen, color: "#000", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{a.no}</span>
               </div>
               <div style={{ color: t.teks, fontSize: 25, lineHeight: 2.3, textAlign: "right", fontFamily: FONT_ARAB, direction: "rtl", marginBottom: terjemah ? 10 : 0 }}>{a.arab}</div>
