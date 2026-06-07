@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { HalamanInsight, ModalVoice, ModalOCR, HalamanQuranRef, HalamanHadits, PanelSmartReminder } from "./ProFitur";
+import { HalamanInsight, ModalVoice, ModalOCR, HalamanQuran, HalamanHadits, PanelSmartReminder } from "./ProFitur";
 
 // ═══════════════════════ KONSTANTA ═══════════════════════════════════════════
 
@@ -3103,7 +3103,7 @@ export default function App() {
       {tampilan==="quran" && (
         <div style={{position:"sticky",top:0,zIndex:50,background:t.nav,padding:"14px 16px",borderBottom:`1px solid ${t.border}`,display:"flex",alignItems:"center",gap:10}}>
           <button onClick={()=>setTampilan("menu")} style={{background:"none",border:"none",color:tema.aksen,fontSize:20,cursor:"pointer"}}>←</button>
-          <span style={{fontSize:18,fontWeight:800,color:t.teks}}>📖 Ayat (AI)</span>
+          <span style={{fontSize:18,fontWeight:800,color:t.teks}}>📖 Al-Quran</span>
         </div>
       )}
       {tampilan==="hadits" && (
@@ -3187,7 +3187,7 @@ export default function App() {
         {tampilan==="tanyaai"  && <HalamanTanyaAI catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
         {tampilan==="laporan"  && <HalamanLaporan catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
         {tampilan==="insight"  && <HalamanInsight catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
-        {tampilan==="quran"    && <HalamanQuranRef isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
+        {tampilan==="quran"    && <HalamanQuran t={t} tema={tema}/>}
         {tampilan==="hadits"   && <HalamanHadits t={t} tema={tema}/>}
 
         {tampilan==="menu" && (
@@ -3236,7 +3236,7 @@ export default function App() {
                   setEditFolderObj(null);setModalFolder(true);
                 }},
                 {ikon:"🧠",lab:"Insight AI",aksi:()=>{ if(!isPro){bukaGatePro("AI Weekly Insight tersedia untuk pengguna Pro 🧠");return;} setTampilan("insight"); }},
-                {ikon:"📖",lab:"Ayat (AI)",aksi:()=>{ if(!isPro){bukaGatePro("Referensi Ayat tersedia untuk pengguna Pro 📖");return;} setTampilan("quran"); }},
+                {ikon:"📖",lab:"Al-Quran",aksi:()=>{ if(!isPro){bukaGatePro("Al-Quran (terjemahan Kemenag) tersedia untuk pengguna Pro 📖");return;} setTampilan("quran"); }},
                 {ikon:"📜",lab:"Hadits Shahih",aksi:()=>{ if(!isPro){bukaGatePro("Hadits Shahih (HadeethEnc) tersedia untuk pengguna Pro 📜");return;} setTampilan("hadits"); }},
                 {ikon:"🎙️",lab:"Voice → Catatan",aksi:()=>{ if(!isPro){bukaGatePro("Voice → Catatan tersedia untuk pengguna Pro 🎙️");return;} setModalVoice(true); }},
                 {ikon:"📷",lab:"Scan → Catatan",aksi:()=>{ if(!isPro){bukaGatePro("Scan → Catatan (OCR) tersedia untuk pengguna Pro 📷");return;} setModalOCR(true); }},
