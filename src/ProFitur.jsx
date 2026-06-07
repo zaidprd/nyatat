@@ -480,3 +480,159 @@ export function PanelSmartReminder({ catatan, isPro, onGatePro, t, tema }) {
     </>
   );
 }
+
+// ═══════════════════════ 7) HADITS SHAHIH (HadeethEnc, tanpa AI) ═════════════
+// Sumber: HadeethEnc.com via proxy /.netlify/functions/hadits.
+// Hanya memuat hadits shahih/hasan, lengkap derajat + takhrij + syarah (Bahasa Indonesia).
+const HADITS_API = "/.netlify/functions/hadits";
+
+function isRootCat(k) {
+  return k.parent_id == null || k.parent_id === 0 || k.parent_id === "0" || k.parent_id === "";
+}
+
+export function HalamanHadits({ t, tema }) {
+  const aksen = tema?.aksen || "#28c0b6";
+  const [kategori, setKategori] = useState([]);   // semua kategori (flat)
+  const [stack, setStack] = useState([]);          // breadcrumb: [{id,title}]
+  const [daftar, setDaftar] = useState(null);      // daftar hadits pada kategori daun
+  const [detail, setDetail] = useState(null);      // hadits terpilih
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      setErr("");
+      try {
+        const res = await fetch(`${HADITS_API}?jenis=kategori`);
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.data || []);
+        setKategori(list);
+      } catch {
+        setErr("Gagal memuat kategori. Periksa koneksi internet.");
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  const parentId = stack.length ? stack[stack.length - 1].id : null;
+  const anakKategori = parentId == null
+    ? kategori.filter(isRootCat)
+    : kategori.filter((k) => String(k.parent_id) === String(parentId));
+
+  const bukaKategori = async (k) => {
+    const punyaAnak = kategori.some((c) => String(c.parent_id) === String(k.id));
+    setStack((s) => [...s, k]);
+    setDaftar(null);
+    setDetail(null);
+    setErr("");
+    if (!punyaAnak) {
+      setLoading(true);
+      try {
+        const res = await fetch(`${HADITS_API}?jenis=daftar&kategori=${k.id}`);
+        const data = await res.json();
+        setDaftar(data.data || []);
+      } catch {
+        setErr("Gagal memuat daftar hadits.");
+      }
+      setLoading(false);
+    }
+  };
+
+  const bukaHadits = async (h) => {
+    setLoading(true);
+    setErr("");
+    try {
+      const res = await fetch(`${HADITS_API}?jenis=satu&id=${h.id}`);
+      setDetail(await res.json());
+    } catch {
+      setErr("Gagal memuat hadits.");
+    }
+    setLoading(false);
+  };
+
+  const kembali = () => {
+    setErr("");
+    if (detail) { setDetail(null); return; }
+    if (daftar) { setDaftar(null); setStack((s) => s.slice(0, -1)); return; }
+    if (stack.length) { setStack((s) => s.slice(0, -1)); return; }
+  };
+
+  const adaNav = detail || daftar || stack.length > 0;
+  const judulNav = detail ? "Hadits" : (stack.length ? stack[stack.length - 1].title : "Kategori");
+
+  const Badge = ({ teks }) => (
+    <span style={{ fontSize: 11, padding: "2px 10px", borderRadius: 10, background: "#0d5c2a", color: "#fff", fontWeight: 700 }}>{teks}</span>
+  );
+
+  return (
+    <div style={{ padding: 16 }}>
+      {adaNav && (
+        <button onClick={kembali} style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 10, padding: "8px 14px", color: aksen, fontSize: 13, fontWeight: 700, cursor: "pointer", marginBottom: 12 }}>
+          ← {judulNav}
+        </button>
+      )}
+
+      {loading && <div style={{ textAlign: "center", padding: 28, color: t.subteks }}>⏳ Memuat…</div>}
+      {err && !loading && <div style={{ background: "#2a0e0e", border: "1px solid #5a1010", borderRadius: 12, padding: 14, color: "#e84040", fontSize: 13 }}>❌ {err}</div>}
+
+      {/* DETAIL HADITS */}
+      {!loading && detail && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 14, padding: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+              {detail.grade && <Badge teks={detail.grade} />}
+              {detail.attribution && <span style={{ color: aksen, fontSize: 12, fontWeight: 700 }}>{detail.attribution}</span>}
+            </div>
+            {detail.hadith_arabic && (
+              <div style={{ color: t.teks, fontSize: 19, lineHeight: 2.1, textAlign: "right", fontFamily: "'Traditional Arabic','Scheherazade',Georgia,serif", direction: "rtl", marginBottom: 12 }}>{detail.hadith_arabic}</div>
+            )}
+            <div style={{ color: t.teks, fontSize: 14.5, lineHeight: 1.8 }}>{detail.hadith_indonesian || detail.hadith}</div>
+          </div>
+
+          {detail.explanation && (
+            <div style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14 }}>
+              <div style={{ color: aksen, fontSize: 12, fontWeight: 800, marginBottom: 6, letterSpacing: 0.5 }}>📝 SYARAH</div>
+              <div style={{ color: t.subteks, fontSize: 13, lineHeight: 1.7 }}>{detail.explanation}</div>
+            </div>
+          )}
+          {detail.hints && (Array.isArray(detail.hints) ? detail.hints.length > 0 : true) && (
+            <div style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14 }}>
+              <div style={{ color: aksen, fontSize: 12, fontWeight: 800, marginBottom: 6, letterSpacing: 0.5 }}>💡 FAEDAH</div>
+              <div style={{ color: t.subteks, fontSize: 13, lineHeight: 1.7 }}>
+                {Array.isArray(detail.hints) ? detail.hints.join(" · ") : detail.hints}
+              </div>
+            </div>
+          )}
+          <div style={{ color: t.muted, fontSize: 11, textAlign: "center" }}>Sumber: HadeethEnc.com (Ensiklopedia Hadits Nabawi) — hanya hadits shahih/hasan.</div>
+        </div>
+      )}
+
+      {/* DAFTAR HADITS */}
+      {!loading && !detail && daftar && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {daftar.length === 0 && <div style={{ color: t.muted, fontSize: 13, textAlign: "center", padding: 20 }}>Belum ada hadits di kategori ini.</div>}
+          {daftar.map((h) => (
+            <button key={h.id} onClick={() => bukaHadits(h)} style={{ textAlign: "left", background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14, color: t.teks, fontSize: 13.5, lineHeight: 1.6, cursor: "pointer", display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <span style={{ color: aksen, flexShrink: 0 }}>📜</span>
+              <span>{h.title}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* KATEGORI */}
+      {!loading && !detail && !daftar && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {anakKategori.map((k) => (
+            <button key={k.id} onClick={() => bukaKategori(k)} style={{ background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14, color: t.teks, fontSize: 13, fontWeight: 600, lineHeight: 1.5, cursor: "pointer", textAlign: "left", minHeight: 64, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 6 }}>
+              <span>📂 {k.title}</span>
+              {k.hadeeths_count != null && <span style={{ color: aksen, fontSize: 11, fontWeight: 700 }}>{k.hadeeths_count} hadits</span>}
+            </button>
+          ))}
+          {anakKategori.length === 0 && !err && <div style={{ color: t.muted, fontSize: 13, gridColumn: "1 / -1", textAlign: "center", padding: 20 }}>Tidak ada kategori.</div>}
+        </div>
+      )}
+    </div>
+  );
+}

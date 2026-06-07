@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { HalamanInsight, ModalVoice, ModalOCR, HalamanQuranRef, PanelSmartReminder } from "./ProFitur";
+import { HalamanInsight, ModalVoice, ModalOCR, HalamanQuranRef, HalamanHadits, PanelSmartReminder } from "./ProFitur";
 
 // ═══════════════════════ KONSTANTA ═══════════════════════════════════════════
 
@@ -3103,7 +3103,13 @@ export default function App() {
       {tampilan==="quran" && (
         <div style={{position:"sticky",top:0,zIndex:50,background:t.nav,padding:"14px 16px",borderBottom:`1px solid ${t.border}`,display:"flex",alignItems:"center",gap:10}}>
           <button onClick={()=>setTampilan("menu")} style={{background:"none",border:"none",color:tema.aksen,fontSize:20,cursor:"pointer"}}>←</button>
-          <span style={{fontSize:18,fontWeight:800,color:t.teks}}>📖 Ayat & Hadits</span>
+          <span style={{fontSize:18,fontWeight:800,color:t.teks}}>📖 Ayat (AI)</span>
+        </div>
+      )}
+      {tampilan==="hadits" && (
+        <div style={{position:"sticky",top:0,zIndex:50,background:t.nav,padding:"14px 16px",borderBottom:`1px solid ${t.border}`,display:"flex",alignItems:"center",gap:10}}>
+          <button onClick={()=>setTampilan("menu")} style={{background:"none",border:"none",color:tema.aksen,fontSize:20,cursor:"pointer"}}>←</button>
+          <span style={{fontSize:18,fontWeight:800,color:t.teks}}>📜 Hadits Shahih</span>
         </div>
       )}
 
@@ -3182,6 +3188,7 @@ export default function App() {
         {tampilan==="laporan"  && <HalamanLaporan catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
         {tampilan==="insight"  && <HalamanInsight catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
         {tampilan==="quran"    && <HalamanQuranRef isPro={isPro} onGatePro={bukaGatePro} t={t} tema={tema}/>}
+        {tampilan==="hadits"   && <HalamanHadits t={t} tema={tema}/>}
 
         {tampilan==="menu" && (
           <div style={{padding:16}}>
@@ -3229,7 +3236,8 @@ export default function App() {
                   setEditFolderObj(null);setModalFolder(true);
                 }},
                 {ikon:"🧠",lab:"Insight AI",aksi:()=>{ if(!isPro){bukaGatePro("AI Weekly Insight tersedia untuk pengguna Pro 🧠");return;} setTampilan("insight"); }},
-                {ikon:"📖",lab:"Ayat & Hadits",aksi:()=>{ if(!isPro){bukaGatePro("Referensi Quran/Hadits tersedia untuk pengguna Pro 📖");return;} setTampilan("quran"); }},
+                {ikon:"📖",lab:"Ayat (AI)",aksi:()=>{ if(!isPro){bukaGatePro("Referensi Ayat tersedia untuk pengguna Pro 📖");return;} setTampilan("quran"); }},
+                {ikon:"📜",lab:"Hadits Shahih",aksi:()=>{ if(!isPro){bukaGatePro("Hadits Shahih (HadeethEnc) tersedia untuk pengguna Pro 📜");return;} setTampilan("hadits"); }},
                 {ikon:"🎙️",lab:"Voice → Catatan",aksi:()=>{ if(!isPro){bukaGatePro("Voice → Catatan tersedia untuk pengguna Pro 🎙️");return;} setModalVoice(true); }},
                 {ikon:"📷",lab:"Scan → Catatan",aksi:()=>{ if(!isPro){bukaGatePro("Scan → Catatan (OCR) tersedia untuk pengguna Pro 📷");return;} setModalOCR(true); }},
             {ikon:"⚡",lab:"Template",  aksi:()=>setModalTmpl(true)},
