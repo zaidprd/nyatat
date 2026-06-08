@@ -339,11 +339,9 @@ const FONT_ARAB = "'Amiri Quran','Traditional Arabic','Scheherazade New',serif";
 
 // Qori murottal (audio dari everyayah.com — bebas CORS, stabil)
 const QORI = [
-  { id: "Abdurrahmaan_As-Sudais_64kbps",  nama: "As-Sudais" },
-  { id: "Alafasy_64kbps",                 nama: "Al-Afasy" },
-  { id: "Abdul_Basit_Murattal_64kbps",    nama: "Abdul Basit" },
-  { id: "Husary_64kbps",                  nama: "Al-Husary" },
-  { id: "Minshawy_Murattal_128kbps",      nama: "Al-Minshawi" },
+  { id: "Alafasy_64kbps",            nama: "Al-Afasy" },
+  { id: "Husary_64kbps",             nama: "Al-Husary" },
+  { id: "Minshawy_Murattal_128kbps", nama: "Al-Minshawi" },
 ];
 const VALID_QORI = new Set(QORI.map((q) => q.id));
 // surahNo + verseNo masing-masing di-pad 3 digit, contoh: surah 1 ayat 1 → "001001"
