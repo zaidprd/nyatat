@@ -484,16 +484,38 @@ function GatePro({ pesan, onUpgrade, onTutup, t }) {
 }
 
 // Modal sukses pembayaran — Pro aktif selamanya
-function NotifSukses({ onTutup, t }) {
+function NotifSukses({ onTutup, t, orderId }) {
   const terang = t && t.kartu === "#ffffff";
+  const [disalin, setDisalin] = useState(false);
+  const salinOrderId = () => {
+    if (!orderId) return;
+    navigator.clipboard.writeText(orderId).then(() => {
+      setDisalin(true);
+      setTimeout(() => setDisalin(false), 2000);
+    }).catch(() => {});
+  };
   return (
     <div style={{position:"fixed",inset:0,background:terang?"#0006":"#000d",zIndex:900,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
       <div style={{background:terang?"#ffffff":"#101010",border:"1px solid #f5c84244",borderRadius:22,padding:"34px 26px",maxWidth:360,width:"100%",textAlign:"center",boxShadow:terang?"0 14px 50px #0003":"0 14px 50px #000a"}}>
         <div style={{fontSize:64,marginBottom:10}}>🎉</div>
         <div style={{fontSize:21,fontWeight:900,color:"#f5c842",marginBottom:10,lineHeight:1.3}}>Selamat! KapurPad Pro Aktif Selamanya</div>
-        <div style={{fontSize:14,color:terang?"#666":"#999",lineHeight:1.7,marginBottom:24}}>
+        <div style={{fontSize:14,color:terang?"#666":"#999",lineHeight:1.7,marginBottom:16}}>
           Semua fitur premium terbuka. Terima kasih sudah mendukung KapurPad! 🙏
         </div>
+        {orderId && (
+          <div style={{background:terang?"#fff9e6":"#1a1200",border:"1px solid #f5c84244",borderRadius:12,padding:"12px 14px",marginBottom:14,textAlign:"left"}}>
+            <div style={{fontSize:11,color:"#f5c842",fontWeight:700,marginBottom:6}}>ORDER ID — SIMPAN INI!</div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontFamily:"monospace",fontSize:12,color:terang?"#6a4e00":"#f5c842",flex:1,wordBreak:"break-all"}}>{orderId}</span>
+              <button onClick={salinOrderId} style={{flexShrink:0,background:disalin?"#34c77622":"#f5c84222",border:`1px solid ${disalin?"#34c776":"#f5c84266"}`,borderRadius:7,padding:"5px 10px",color:disalin?"#34c776":"#f5c842",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>
+                {disalin ? "Tersalin!" : "Salin"}
+              </button>
+            </div>
+            <div style={{fontSize:10,color:terang?"#a87800":"#8a7030",marginTop:8,lineHeight:1.5}}>
+              Simpan Order ID &amp; email pembelianmu. Gunakan untuk reaktivasi Pro jika data hilang.
+            </div>
+          </div>
+        )}
         <button onClick={onTutup} style={{
           width:"100%",padding:"14px 0",background:"linear-gradient(135deg,#f5c842,#e8a030)",
           border:"none",borderRadius:12,color:"#000",fontWeight:800,fontSize:15,cursor:"pointer",
@@ -862,6 +884,9 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
   const [notifStatus, setNotifStatus] = useState(Notification?.permission||"default");
   const [kodeInput, setKodeInput] = useState("");
   const [kodeLoading, setKodeLoading] = useState(false);
+  const [inputOrderId, setInputOrderId] = useState("");
+  const [inputEmail, setInputEmail]     = useState("");
+  const [reaktivasiLoading, setReaktivasiLoading] = useState(false);
 
   // Validasi kode aktivasi di backend (kode rahasia tidak ada di frontend)
   const cekKode = async () => {
@@ -892,6 +917,48 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
     const ok = await mintaIzinNotif();
     setNotifStatus(ok?"granted":"denied");
     onUbah({...settings, notifikasi:ok});
+  };
+
+  const reaktivasiPro = async () => {
+    const oid = inputOrderId.trim();
+    const em  = inputEmail.trim();
+    if (!oid || reaktivasiLoading) return;
+    setReaktivasiLoading(true);
+    try {
+      // Coba via Order ID + Email
+      const res = await fetch("/.netlify/functions/reaktivasi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: oid, email: em }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        aktifkanPro();
+        onAktivasiSukses?.();
+        setInputOrderId(""); setInputEmail("");
+        tampilNotif?.("Pro aktif kembali! Selamat datang lagi.");
+        setReaktivasiLoading(false);
+        return;
+      }
+      // Fallback: coba sebagai kode aktivasi owner
+      const res2 = await fetch("/.netlify/functions/aktivasi-kode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kode: oid }),
+      });
+      const data2 = await res2.json();
+      if (data2.valid) {
+        aktifkanPro();
+        onAktivasiSukses?.();
+        setInputOrderId(""); setInputEmail("");
+        tampilNotif?.("Kode aktivasi berhasil!");
+      } else {
+        tampilNotif?.(`❌ ${data.pesan || "Gagal reaktivasi"}`);
+      }
+    } catch {
+      tampilNotif?.("❌ Gagal koneksi, coba lagi");
+    }
+    setReaktivasiLoading(false);
   };
 
   const eksporCatatan = () => {
@@ -1069,6 +1136,28 @@ function HalamanPengaturan({ settings, onUbah, onTutup, catatan, isPro, onGatePr
           </Seksi>
         )}
 
+        {/* Reaktivasi Pro */}
+        {!isPro && (
+          <Seksi judul="REAKTIVASI PRO" terang={terang}>
+            <div style={{padding:"10px 0", display:"flex", flexDirection:"column", gap:8}}>
+              <div style={{color:terang?"#1a1a1a":"#ddd", fontSize:14, fontWeight:700}}>Sudah pernah beli Pro?</div>
+              <div style={{color:terang?"#888":"#666", fontSize:12, lineHeight:1.5}}>
+                Masukkan Order ID dan email pembelian untuk aktifkan ulang Pro kamu
+              </div>
+              <input value={inputOrderId} onChange={e=>setInputOrderId(e.target.value)}
+                placeholder="Order ID (KAPURPAD-LIFE-xxx)"
+                style={{background:cInputBg, border:`1px solid ${cInputBr}`, borderRadius:8, padding:"10px 12px", color:cInputTx, fontSize:13, outline:"none", fontFamily:"monospace"}}/>
+              <input value={inputEmail} onChange={e=>setInputEmail(e.target.value)}
+                type="email" placeholder="Email pembelian"
+                style={{background:cInputBg, border:`1px solid ${cInputBr}`, borderRadius:8, padding:"10px 12px", color:cInputTx, fontSize:13, outline:"none"}}/>
+              <button onClick={reaktivasiPro} disabled={!inputOrderId.trim()||reaktivasiLoading}
+                style={{padding:"11px 16px", background:(!inputOrderId.trim()||reaktivasiLoading)?(terang?"#e6dcae":"#5a4800"):"linear-gradient(135deg,#f5c842,#e8a030)", border:"none", borderRadius:8, color:"#000", fontWeight:700, fontSize:14, cursor:(!inputOrderId.trim()||reaktivasiLoading)?"not-allowed":"pointer", opacity:(!inputOrderId.trim()||reaktivasiLoading)?0.65:1}}>
+                {reaktivasiLoading ? "Memverifikasi…" : "Aktifkan Ulang"}
+              </button>
+            </div>
+          </Seksi>
+        )}
+
         {/* Tentang */}
         <Seksi judul="TENTANG" terang={terang}>
           <div style={{padding:"10px 0", color:"#555", fontSize:13, lineHeight:1.8}}>
@@ -1164,6 +1253,7 @@ function ModalPremium({ onTutup, onSukses, tampilNotif, t }) {
       window.snap.pay(token, {
         onSuccess: function () {
           try { localStorage.removeItem("kapurpad_pending_order"); } catch {}
+          try { localStorage.setItem("kapurpad_last_order", orderId); } catch {}
           onSukses();
         },
         onPending: function () {
@@ -2734,6 +2824,7 @@ export default function App() {
   const [isPro,        setIsPro]        = useState(cekStatusPro);
   const [gatePro,      setGatePro]      = useState(null);
   const [notifSukses,  setNotifSukses]  = useState(false);
+  const [lastOrderId,  setLastOrderId]  = useState(() => { try { return localStorage.getItem("kapurpad_last_order") || ""; } catch { return ""; } });
   const [prefillKal,   setPrefillKal]   = useState(null);
   const [folders,      setFolders]      = useState(muatFolder);
   const [folderFilter, setFolderFilter] = useState("semua"); // "semua" | folder.id
@@ -2791,6 +2882,10 @@ export default function App() {
         if (data.transaction_status === "settlement" || data.transaction_status === "capture") {
           aktifkanPro();
           setIsPro(true);
+          try {
+            const lo = localStorage.getItem("kapurpad_last_order") || "";
+            setLastOrderId(lo);
+          } catch {}
           try { localStorage.removeItem("kapurpad_pending_order"); } catch {}
           setNotifSukses(true);
         }
@@ -2961,8 +3056,8 @@ export default function App() {
       )}
       {modalPro  && <ModalPremium t={t} tampilNotif={tampilNotif}
         onTutup={()=>setModalPro(false)}
-        onSukses={()=>{ aktifkanPro(); setIsPro(true); setGatePro(null); setModalPro(false); setNotifSukses(true); }}/>}
-      {notifSukses && <NotifSukses t={t} onTutup={()=>setNotifSukses(false)}/>}
+        onSukses={()=>{ aktifkanPro(); setIsPro(true); setGatePro(null); setModalPro(false); try { setLastOrderId(localStorage.getItem("kapurpad_last_order")||""); } catch {} setNotifSukses(true); }}/>}
+      {notifSukses && <NotifSukses t={t} orderId={lastOrderId} onTutup={()=>setNotifSukses(false)}/>}
       {modalTmpl && <ModalTemplate onPilih={tp=>{setTmplDipilih(tp);setModalTmpl(false);setSedangBuat(true);}} onTutup={()=>setModalTmpl(false)} isPro={isPro} onGatePro={bukaGatePro}/>}
       {modalFolder && (
         <ModalBuatFolder
