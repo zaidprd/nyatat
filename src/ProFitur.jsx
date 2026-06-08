@@ -337,15 +337,18 @@ const QURAN_API = "/.netlify/functions/quran";
 // Font bergaya Mushaf Madinah (Uthmani). Teks dari alquran.cloud sudah Uthmani (Mushaf Madinah).
 const FONT_ARAB = "'Amiri Quran','Traditional Arabic','Scheherazade New',serif";
 
-// Qori murottal (audio gratis dari cdn.islamic.network)
+// Qori murottal (audio dari everyayah.com — bebas CORS, stabil)
 const QORI = [
-  { id: "ar.sudais", nama: "As-Sudais" },
-  { id: "ar.alafasy", nama: "Al-Afasy" },
-  { id: "ar.abdulbasitmurattal", nama: "Abdul Basit" },
-  { id: "ar.husary", nama: "Al-Hushary" },
-  { id: "ar.minshawi", nama: "Al-Minshawi" },
+  { id: "Abdurrahmaan_As-Sudais_64kbps",  nama: "As-Sudais" },
+  { id: "Alafasy_64kbps",                 nama: "Al-Afasy" },
+  { id: "Abdul_Basit_Murattal_64kbps",    nama: "Abdul Basit" },
+  { id: "Husary_64kbps",                  nama: "Al-Husary" },
+  { id: "Minshawy_Murattal_128kbps",      nama: "Al-Minshawi" },
 ];
-const urlAudio = (qori, globalNo) => `https://cdn.islamic.network/quran/audio/128/${qori}/${globalNo}.mp3`;
+const VALID_QORI = new Set(QORI.map((q) => q.id));
+// surahNo + verseNo masing-masing di-pad 3 digit, contoh: surah 1 ayat 1 → "001001"
+const urlAudio = (folder, surahNo, verseNo) =>
+  `https://everyayah.com/data/${folder}/${String(surahNo).padStart(3,"0")}${String(verseNo).padStart(3,"0")}.mp3`;
 
 export function HalamanQuran({ t, tema }) {
   const aksen = tema?.aksen || "#28c0b6";
@@ -362,7 +365,10 @@ export function HalamanQuran({ t, tema }) {
   });
   const [ayatDitandai, setAyatDitandai] = useState(null); // nomor ayat yang ditandai di surah aktif
   const [qori, setQori] = useState(() => {
-    try { return localStorage.getItem("kp_quran_qori") || "ar.sudais"; } catch { return "ar.sudais"; }
+    try {
+      const stored = localStorage.getItem("kp_quran_qori") || "";
+      return VALID_QORI.has(stored) ? stored : QORI[0].id;
+    } catch { return QORI[0].id; }
   });
   const [mainAyat, setMainAyat] = useState(null); // nomor ayat yang sedang diputar
   const [loadingAudio, setLoadingAudio] = useState(null); // nomor ayat yang sedang buffering
@@ -447,7 +453,7 @@ export function HalamanQuran({ t, tema }) {
     au.onerror   = null;
     au.onstalled = null;
 
-    au.src = urlAudio(qori, ayat.global);
+    au.src = urlAudio(qori, pilih.info.number, ayat.no);
 
     // "playing" fire saat audio BETUL-BETUL mulai bersuara (setelah buffering selesai)
     au.onplaying = () => { setMainAyat(ayat.no); setLoadingAudio(null); };
