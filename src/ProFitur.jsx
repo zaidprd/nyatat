@@ -528,29 +528,52 @@ export function HalamanQuran({ t, tema }) {
               {QORI.map((q) => <option key={q.id} value={q.id}>🎙️ {q.nama}</option>)}
             </select>
           </div>
-          <div style={{ background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 14, padding: 16, textAlign: "center" }}>
-            <div style={{ color: t.teks, fontSize: 26, fontWeight: 800, fontFamily: FONT_ARAB }}>{pilih.info.name}</div>
-            <div style={{ color: aksen, fontSize: 15, fontWeight: 700, marginTop: 4 }}>{pilih.info.englishName}</div>
-            <div style={{ color: t.subteks, fontSize: 12, marginTop: 4 }}>{pilih.info.englishNameTranslation} · {pilih.info.numberOfAyahs} ayat · {pilih.info.revelationType === "Meccan" ? "Makkiyah" : "Madaniyah"}</div>
+          {/* Header surah */}
+          <div style={{ background: `linear-gradient(135deg, ${aksen}22, ${aksen}08)`, border: `1px solid ${aksen}33`, borderRadius: 16, padding: "20px 16px", textAlign: "center" }}>
+            <div style={{ color: t.teks, fontSize: 30, fontWeight: 800, fontFamily: FONT_ARAB, marginBottom: 6 }}>{pilih.info.name}</div>
+            <div style={{ color: aksen, fontSize: 16, fontWeight: 800, marginBottom: 4 }}>{pilih.info.englishName}</div>
+            <div style={{ color: t.subteks, fontSize: 12 }}>{pilih.info.englishNameTranslation} · {pilih.info.numberOfAyahs} ayat · {pilih.info.revelationType === "Meccan" ? "Makkiyah" : "Madaniyah"}</div>
           </div>
-          {pilih.ayat.map((a) => (
-            <div key={a.no} id={`ayat-${a.no}`} data-ayah={a.no} style={{ background: ayatDitandai === a.no ? `${aksen}14` : t.kartu, border: `1px solid ${ayatDitandai === a.no ? aksen : t.border}`, borderRadius: 12, padding: 14, scrollMarginTop: 70 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <button onClick={() => toggleAyat(a)} title="Putar ayat" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 15, color: (mainAyat === a.no || loadingAudio === a.no) ? aksen : t.muted, padding: 0 }}>
-                    {loadingAudio === a.no ? "⏳" : mainAyat === a.no ? "⏸️" : "▶️"}
-                  </button>
-                  <button onClick={() => tandai(a.no)} title="Tandai terakhir dibaca" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: ayatDitandai === a.no ? aksen : t.muted, display: "flex", alignItems: "center", gap: 5, padding: 0 }}>
-                    🔖 {ayatDitandai === a.no ? "Terakhir dibaca" : "Tandai"}
-                  </button>
+
+          {/* Daftar ayat */}
+          {pilih.ayat.map((a, idx) => {
+            const isPlaying  = mainAyat === a.no;
+            const isLoading  = loadingAudio === a.no;
+            const isDitandai = ayatDitandai === a.no;
+            const isGanjil   = idx % 2 !== 0;
+            const cardBg     = isDitandai ? `${aksen}14` : isGanjil ? t.input : t.kartu;
+            const leftBorder = isPlaying ? aksen : isDitandai ? aksen : isGanjil ? `${aksen}55` : `${aksen}22`;
+            return (
+              <div key={a.no} id={`ayat-${a.no}`} data-ayah={a.no}
+                style={{ background: cardBg, border: `1px solid ${isDitandai ? aksen : t.border}`, borderLeft: `4px solid ${leftBorder}`, borderRadius: 14, padding: "14px 16px", scrollMarginTop: 70, transition: "background 0.2s" }}>
+                {/* Baris atas: nomor + aksi */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  {/* Badge nomor */}
+                  <div style={{ width: 30, height: 30, borderRadius: "50%", background: isPlaying ? aksen : `${aksen}1a`, border: `1.5px solid ${aksen}55`, color: isPlaying ? "#000" : aksen, fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{a.no}</div>
+                  {/* Tombol aksi */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button onClick={() => tandai(a.no)} title="Tandai terakhir dibaca"
+                      style={{ background: isDitandai ? `${aksen}22` : "none", border: isDitandai ? `1px solid ${aksen}55` : "none", borderRadius: 8, padding: "4px 8px", cursor: "pointer", fontSize: 12, fontWeight: 700, color: isDitandai ? aksen : t.muted, display: "flex", alignItems: "center", gap: 4 }}>
+                      🔖{isDitandai ? <span>Terakhir dibaca</span> : null}
+                    </button>
+                    <button onClick={() => toggleAyat(a)} title="Putar ayat"
+                      style={{ width: 30, height: 30, borderRadius: "50%", background: (isPlaying || isLoading) ? aksen : `${aksen}1a`, border: `1.5px solid ${aksen}55`, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", color: (isPlaying || isLoading) ? "#000" : aksen }}>
+                      {isLoading ? "⏳" : isPlaying ? "⏸" : "▶"}
+                    </button>
+                  </div>
                 </div>
-                <span style={{ width: 26, height: 26, borderRadius: "50%", background: mainAyat === a.no ? aksen : aksen, color: "#000", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{a.no}</span>
+                {/* Teks Arab */}
+                <div style={{ color: t.teks, fontSize: 26, lineHeight: 2.4, textAlign: "right", fontFamily: FONT_ARAB, direction: "rtl", marginBottom: terjemah ? 12 : 0 }}>{a.arab}</div>
+                {/* Terjemahan */}
+                {terjemah && (
+                  <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 10, color: t.subteks, fontSize: 13.5, lineHeight: 1.75, fontStyle: "italic" }}>
+                    {a.indo}
+                  </div>
+                )}
               </div>
-              <div style={{ color: t.teks, fontSize: 25, lineHeight: 2.3, textAlign: "right", fontFamily: FONT_ARAB, direction: "rtl", marginBottom: terjemah ? 10 : 0 }}>{a.arab}</div>
-              {terjemah && <div style={{ color: t.subteks, fontSize: 14, lineHeight: 1.7 }}>{a.indo}</div>}
-            </div>
-          ))}
-          <div style={{ color: t.muted, fontSize: 11, textAlign: "center" }}>Sumber: alquran.cloud — teks Uthmani (Mushaf Madinah) + terjemahan resmi Kemenag RI.</div>
+            );
+          })}
+          <div style={{ color: t.muted, fontSize: 11, textAlign: "center", paddingBottom: 8 }}>Sumber: alquran.cloud — teks Uthmani (Mushaf Madinah) + terjemahan resmi Kemenag RI.</div>
         </div>
       )}
 
