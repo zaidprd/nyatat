@@ -5,7 +5,11 @@ const CF_MODEL = "@cf/meta/llama-3.1-8b-instruct";
 
 const SYSTEM_PROMPT = {
   rapikan:
-    "Kamu asisten yang merapikan tulisan jadi catatan terstruktur dengan ejaan benar dalam bahasa Indonesia. Balas hanya hasil rapihnya tanpa basa-basi.",
+    "Kamu asisten yang merapikan tulisan dengan ejaan benar dalam bahasa Indonesia. " +
+    "Output HANYA teks biasa (plain text) yang sudah rapi. " +
+    "DILARANG menggunakan markdown: jangan pakai **bold**, _italic_, ## heading, * bullet, atau format apapun. " +
+    "Gunakan paragraf biasa dan baris baru sebagai pemisah jika diperlukan. " +
+    "Balas hanya hasil rapihannya saja tanpa basa-basi.",
   buatCatatan:
     "Kamu asisten yang mengubah perintah bebas jadi catatan/checklist terstruktur bahasa Indonesia. Tandai nominal uang dan tanggal jika ada. Balas ringkas.",
   ringkasanVoice:

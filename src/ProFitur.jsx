@@ -365,6 +365,7 @@ export function HalamanQuran({ t, tema }) {
     try { return localStorage.getItem("kp_quran_qori") || "ar.sudais"; } catch { return "ar.sudais"; }
   });
   const [mainAyat, setMainAyat] = useState(null); // nomor ayat yang sedang diputar
+  const [loadingAudio, setLoadingAudio] = useState(null); // nomor ayat yang sedang buffering
   const gotoAyahRef = useRef(null);
   const terakhirRef = useRef(terakhir);
   const audioRef = useRef(null);
@@ -436,22 +437,31 @@ export function HalamanQuran({ t, tema }) {
     return audioRef.current;
   };
   const putarAyat = (ayat, lanjut) => {
-    if (!ayat) { setMainAyat(null); return; }
+    if (!ayat) { setMainAyat(null); setLoadingAudio(null); return; }
     const au = getAudio();
+    try { au.pause(); } catch {}
     au.src = urlAudio(qori, ayat.global);
     au.onended = () => {
       if (lanjut) {
         const idx = pilih.ayat.findIndex((x) => x.no === ayat.no);
         putarAyat(pilih.ayat[idx + 1], true);
-      } else setMainAyat(null);
+      } else { setMainAyat(null); setLoadingAudio(null); }
     };
-    au.onerror = () => setMainAyat(null);
-    au.play().catch(() => setMainAyat(null));
-    setMainAyat(ayat.no);
+    au.onerror = () => { setMainAyat(null); setLoadingAudio(null); };
+    setLoadingAudio(ayat.no);
+    setMainAyat(null);
+    au.load();
+    const p = au.play();
+    if (p !== undefined) {
+      p.then(() => { setMainAyat(ayat.no); setLoadingAudio(null); })
+       .catch(() => { setMainAyat(null); setLoadingAudio(null); });
+    } else {
+      setMainAyat(ayat.no); setLoadingAudio(null);
+    }
     document.getElementById(`ayat-${ayat.no}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
-  const stopAudio = () => { try { audioRef.current?.pause(); } catch {} setMainAyat(null); };
-  const toggleAyat = (ayat) => { mainAyat === ayat.no ? stopAudio() : putarAyat(ayat, false); };
+  const stopAudio = () => { try { audioRef.current?.pause(); } catch {} setMainAyat(null); setLoadingAudio(null); };
+  const toggleAyat = (ayat) => { (mainAyat === ayat.no || loadingAudio === ayat.no) ? stopAudio() : putarAyat(ayat, false); };
   const putarSurah = () => { mainAyat ? stopAudio() : putarAyat(pilih.ayat[0], true); };
 
   const kembaliKeDaftar = () => {
@@ -515,8 +525,8 @@ export function HalamanQuran({ t, tema }) {
             <div key={a.no} id={`ayat-${a.no}`} data-ayah={a.no} style={{ background: ayatDitandai === a.no ? `${aksen}14` : t.kartu, border: `1px solid ${ayatDitandai === a.no ? aksen : t.border}`, borderRadius: 12, padding: 14, scrollMarginTop: 70 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <button onClick={() => toggleAyat(a)} title="Putar ayat" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 15, color: mainAyat === a.no ? aksen : t.muted, padding: 0 }}>
-                    {mainAyat === a.no ? "⏸️" : "▶️"}
+                  <button onClick={() => toggleAyat(a)} title="Putar ayat" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 15, color: (mainAyat === a.no || loadingAudio === a.no) ? aksen : t.muted, padding: 0 }}>
+                    {loadingAudio === a.no ? "⏳" : mainAyat === a.no ? "⏸️" : "▶️"}
                   </button>
                   <button onClick={() => tandai(a.no)} title="Tandai terakhir dibaca" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: ayatDitandai === a.no ? aksen : t.muted, display: "flex", alignItems: "center", gap: 5, padding: 0 }}>
                     🔖 {ayatDitandai === a.no ? "Terakhir dibaca" : "Tandai"}
