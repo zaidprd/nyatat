@@ -440,24 +440,32 @@ export function HalamanQuran({ t, tema }) {
     if (!ayat) { setMainAyat(null); setLoadingAudio(null); return; }
     const au = getAudio();
     try { au.pause(); } catch {}
+
+    // Bersihkan handler lama sebelum pasang yang baru
+    au.onplaying = null;
+    au.onended   = null;
+    au.onerror   = null;
+    au.onstalled = null;
+
     au.src = urlAudio(qori, ayat.global);
-    au.onended = () => {
+
+    // "playing" fire saat audio BETUL-BETUL mulai bersuara (setelah buffering selesai)
+    au.onplaying = () => { setMainAyat(ayat.no); setLoadingAudio(null); };
+    au.onended   = () => {
       if (lanjut) {
         const idx = pilih.ayat.findIndex((x) => x.no === ayat.no);
         putarAyat(pilih.ayat[idx + 1], true);
       } else { setMainAyat(null); setLoadingAudio(null); }
     };
-    au.onerror = () => { setMainAyat(null); setLoadingAudio(null); };
+    au.onerror   = () => { setMainAyat(null); setLoadingAudio(null); };
+    // Jika koneksi lambat dan audio terstall, tetap tunjukkan loading
+    au.onstalled = () => { if (loadingAudio !== ayat.no) setLoadingAudio(ayat.no); };
+
     setLoadingAudio(ayat.no);
     setMainAyat(null);
     au.load();
-    const p = au.play();
-    if (p !== undefined) {
-      p.then(() => { setMainAyat(ayat.no); setLoadingAudio(null); })
-       .catch(() => { setMainAyat(null); setLoadingAudio(null); });
-    } else {
-      setMainAyat(ayat.no); setLoadingAudio(null);
-    }
+    au.play().catch(() => { setMainAyat(null); setLoadingAudio(null); });
+
     document.getElementById(`ayat-${ayat.no}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
   const stopAudio = () => { try { audioRef.current?.pause(); } catch {} setMainAyat(null); setLoadingAudio(null); };
