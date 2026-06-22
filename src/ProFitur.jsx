@@ -337,6 +337,38 @@ const QURAN_API = "/.netlify/functions/quran";
 // Font bergaya Mushaf Madinah (Uthmani). Teks dari alquran.cloud sudah Uthmani (Mushaf Madinah).
 const FONT_ARAB = "'Amiri Quran','Traditional Arabic','Scheherazade New',serif";
 
+// Terjemahan nama surah Bahasa Indonesia (Kemenag RI)
+const NAMA_INDO = {
+  1:"Pembukaan",2:"Sapi Betina",3:"Keluarga Imran",4:"Wanita",5:"Hidangan",
+  6:"Binatang Ternak",7:"Tempat Tertinggi",8:"Rampasan Perang",9:"Pengampunan",
+  10:"Yunus",11:"Hud",12:"Yusuf",13:"Guruh",14:"Ibrahim",
+  15:"Pegunungan Batu",16:"Lebah",17:"Perjalanan Malam",18:"Gua",19:"Maryam",
+  20:"Ta Ha",21:"Nabi-Nabi",22:"Haji",23:"Orang-Orang Mukmin",24:"Cahaya",
+  25:"Pembeda",26:"Para Penyair",27:"Semut",28:"Kisah-Kisah",29:"Laba-Laba",
+  30:"Bangsa Romawi",31:"Luqman",32:"Sujud",33:"Golongan Bersekutu",
+  34:"Saba'",35:"Pencipta",36:"Ya Sin",37:"Yang Bershaf-Shaf",38:"Shad",
+  39:"Rombongan",40:"Yang Maha Pengampun",41:"Yang Dijelaskan",42:"Musyawarah",
+  43:"Perhiasan",44:"Asap",45:"Yang Bertekuk Lutut",46:"Bukit Pasir",
+  47:"Muhammad",48:"Kemenangan",49:"Kamar-Kamar",50:"Qaf",
+  51:"Angin Yang Menerbangkan",52:"Gunung",53:"Bintang",54:"Bulan",
+  55:"Yang Maha Pengasih",56:"Hari Kiamat",57:"Besi",58:"Wanita Yang Menggugat",
+  59:"Pengusiran",60:"Wanita Yang Diuji",61:"Barisan",62:"Jumat",
+  63:"Orang-Orang Munafik",64:"Hari Ditampakkan Kesalahan",65:"Talak",
+  66:"Mengharamkan",67:"Kerajaan",68:"Pena",69:"Hari Kiamat",
+  70:"Tempat-Tempat Naik",71:"Nuh",72:"Jin",73:"Orang Yang Berselimut",
+  74:"Orang Yang Berkemul",75:"Hari Kiamat",76:"Manusia",77:"Yang Dikirimkan",
+  78:"Berita Besar",79:"Malaikat Yang Mencabut",80:"Ia Bermuka Masam",
+  81:"Penggulungan",82:"Terbelah",83:"Orang-Orang Yang Curang",
+  84:"Terbelah",85:"Gugusan Bintang",86:"Yang Datang Di Malam Hari",
+  87:"Yang Paling Tinggi",88:"Hari Pembalasan",89:"Fajar",90:"Negeri",
+  91:"Matahari",92:"Malam",93:"Waktu Duha",94:"Kelapangan",95:"Buah Tin",
+  96:"Segumpal Darah",97:"Malam Kemuliaan",98:"Bukti Nyata",99:"Kegoncangan",
+  100:"Berlari Kencang",101:"Hari Kiamat",102:"Bermegah-Megahan",103:"Masa",
+  104:"Pengumpat",105:"Gajah",106:"Suku Quraisy",107:"Barang Berguna",
+  108:"Nikmat Berlimpah",109:"Orang-Orang Kafir",110:"Pertolongan",
+  111:"Gejolak Api",112:"Ikhlas",113:"Waktu Subuh",114:"Manusia"
+};
+
 // Qori murottal (audio dari everyayah.com — bebas CORS, stabil)
 const QORI = [
   { id: "Alafasy_64kbps",            nama: "Al-Afasy" },
@@ -495,7 +527,8 @@ export function HalamanQuran({ t, tema }) {
   const terfilter = surat.filter((s) => {
     const q = cari.trim().toLowerCase();
     if (!q) return true;
-    return String(s.number) === q || (s.englishName || "").toLowerCase().includes(q) || (s.englishNameTranslation || "").toLowerCase().includes(q);
+    const namaIndo = (NAMA_INDO[s.number] || "").toLowerCase();
+    return String(s.number) === q || (s.englishName || "").toLowerCase().includes(q) || namaIndo.includes(q);
   });
 
   const lanjutSurah = () => {
@@ -532,8 +565,15 @@ export function HalamanQuran({ t, tema }) {
           <div style={{ background: `linear-gradient(135deg, ${aksen}22, ${aksen}08)`, border: `1px solid ${aksen}33`, borderRadius: 16, padding: "20px 16px", textAlign: "center" }}>
             <div style={{ color: t.teks, fontSize: 30, fontWeight: 800, fontFamily: FONT_ARAB, marginBottom: 6 }}>{pilih.info.name}</div>
             <div style={{ color: aksen, fontSize: 16, fontWeight: 800, marginBottom: 4 }}>{pilih.info.englishName}</div>
-            <div style={{ color: t.subteks, fontSize: 12 }}>{pilih.info.englishNameTranslation} · {pilih.info.numberOfAyahs} ayat · {pilih.info.revelationType === "Meccan" ? "Makkiyah" : "Madaniyah"}</div>
+            <div style={{ color: t.subteks, fontSize: 12 }}>{NAMA_INDO[pilih.info.number] || pilih.info.englishNameTranslation} · {pilih.info.numberOfAyahs} ayat · {pilih.info.revelationType === "Meccan" ? "Makkiyah" : "Madaniyah"}</div>
           </div>
+
+          {/* Bismillah — tampil terpisah untuk semua surah kecuali At-Taubah (9) dan Al-Fatihah (1, bismillah sudah jadi ayat 1) */}
+          {pilih.info.number !== 9 && pilih.info.number !== 1 && (
+            <div style={{ textAlign: "center", padding: "16px 8px 8px", fontFamily: FONT_ARAB, fontSize: 28, lineHeight: 2, color: t.teks, direction: "rtl" }}>
+              بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+            </div>
+          )}
 
           {/* Daftar ayat */}
           {pilih.ayat.map((a, idx) => {
@@ -585,7 +625,7 @@ export function HalamanQuran({ t, tema }) {
               <span style={{ fontSize: 24 }}>📖</span>
               <span style={{ flex: 1 }}>
                 <span style={{ display: "block", color: t.muted, fontSize: 11 }}>Lanjutkan membaca</span>
-                <span style={{ display: "block", color: t.teks, fontSize: 14, fontWeight: 700, marginTop: 2 }}>QS {terakhir.englishName} : ayat {terakhir.ayah}</span>
+                <span style={{ display: "block", color: t.teks, fontSize: 14, fontWeight: 700, marginTop: 2 }}>QS {terakhir.englishName} · ayat {terakhir.ayah}</span>
               </span>
               <span style={{ color: aksen, fontSize: 20 }}>›</span>
             </button>
@@ -602,7 +642,7 @@ export function HalamanQuran({ t, tema }) {
                 <span style={{ width: 32, height: 32, flexShrink: 0, borderRadius: "50%", background: t.input, color: aksen, fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{s.number}</span>
                 <span style={{ flex: 1 }}>
                   <span style={{ display: "block", color: t.teks, fontSize: 14, fontWeight: 700 }}>{s.englishName}</span>
-                  <span style={{ display: "block", color: t.muted, fontSize: 11, marginTop: 2 }}>{s.englishNameTranslation} · {s.numberOfAyahs} ayat</span>
+                  <span style={{ display: "block", color: t.muted, fontSize: 11, marginTop: 2 }}>{NAMA_INDO[s.number] || s.englishNameTranslation} · {s.numberOfAyahs} ayat · {s.revelationType === "Meccan" ? "Makkiyah" : "Madaniyah"}</span>
                 </span>
                 <span style={{ color: t.teks, fontSize: 20, fontFamily: FONT_ARAB, flexShrink: 0 }}>{s.name}</span>
               </button>
