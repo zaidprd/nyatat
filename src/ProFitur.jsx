@@ -445,12 +445,20 @@ export function HalamanQuran({ t, tema }) {
       const eds = data.data || [];
       const arab = eds.find((e) => e.edition?.identifier === "quran-uthmani") || eds[0];
       const indo = eds.find((e) => e.edition?.identifier === "id.indonesian") || eds[1];
-      const ayat = (arab?.ayahs || []).map((a, i) => ({
-        no: a.numberInSurah,
-        global: a.number,        // nomor ayat global (1-6236) untuk URL audio
-        arab: a.text,
-        indo: indo?.ayahs?.[i]?.text || "",
-      }));
+      const ayat = (arab?.ayahs || []).map((a, i) => {
+        let arabText = a.text;
+        // Hapus bismillah dari awal teks ayat 1 (kecuali Al-Fatihah & At-Taubah)
+        // Bismillah = 4 kata pertama. Untuk surah lain, bismillah sudah ditampilkan terpisah.
+        if (a.numberInSurah === 1 && s.number !== 1 && s.number !== 9) {
+          arabText = arabText.replace(/^(\S+\s+){4}/, "").trim();
+        }
+        return {
+          no: a.numberInSurah,
+          global: a.number,
+          arab: arabText,
+          indo: indo?.ayahs?.[i]?.text || "",
+        };
+      });
       setPilih({ info: s, ayat });
       setAyatDitandai(terakhirRef.current?.number === s.number ? terakhirRef.current.ayah : null);
       if (!gotoAyah) window.scrollTo?.(0, 0);
