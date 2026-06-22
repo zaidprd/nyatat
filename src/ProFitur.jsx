@@ -380,10 +380,17 @@ const VALID_QORI = new Set(QORI.map((q) => q.id));
 const urlAudio = (folder, surahNo, verseNo) =>
   `https://everyayah.com/data/${folder}/${String(surahNo).padStart(3,"0")}${String(verseNo).padStart(3,"0")}.mp3`;
 
+// Warna gradien per kelompok surah (Makkiyah vs Madaniyah)
+const gradienSurah = (no, aksen) => {
+  const juz = Math.ceil(no / 4); // estimasi kasar juz
+  const hues = ["#1a6b4a","#1a3f6b","#4a1a6b","#6b1a3f","#6b4a1a","#1a6b6b"];
+  return hues[(no - 1) % hues.length];
+};
+
 export function HalamanQuran({ t, tema }) {
   const aksen = tema?.aksen || "#28c0b6";
   const [surat, setSurat] = useState([]);
-  const [pilih, setPilih] = useState(null);   // { info, ayat:[{no,arab,indo}] }
+  const [pilih, setPilih] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [cari, setCari] = useState("");
@@ -393,41 +400,36 @@ export function HalamanQuran({ t, tema }) {
   const [terakhir, setTerakhir] = useState(() => {
     try { return JSON.parse(localStorage.getItem("kp_quran_terakhir") || "null"); } catch { return null; }
   });
-  const [ayatDitandai, setAyatDitandai] = useState(null); // nomor ayat yang ditandai di surah aktif
+  const [ayatDitandai, setAyatDitandai] = useState(null);
   const [qori, setQori] = useState(() => {
     try {
       const stored = localStorage.getItem("kp_quran_qori") || "";
       return VALID_QORI.has(stored) ? stored : QORI[0].id;
     } catch { return QORI[0].id; }
   });
-  const [mainAyat, setMainAyat] = useState(null); // nomor ayat yang sedang diputar
-  const [loadingAudio, setLoadingAudio] = useState(null); // nomor ayat yang sedang buffering
+  const [mainAyat, setMainAyat] = useState(null);
+  const [loadingAudio, setLoadingAudio] = useState(null);
+  const [showQori, setShowQori] = useState(false);
   const gotoAyahRef = useRef(null);
   const terakhirRef = useRef(terakhir);
   const audioRef = useRef(null);
 
   useEffect(() => { try { localStorage.setItem("kp_quran_qori", qori); } catch {} }, [qori]);
-  // Hentikan audio saat keluar komponen
   useEffect(() => () => { try { audioRef.current?.pause(); } catch {} }, []);
-
   useEffect(() => { try { localStorage.setItem("kp_quran_terjemah", terjemah ? "1" : "0"); } catch {} }, [terjemah]);
 
   useEffect(() => {
     (async () => {
-      setLoading(true);
-      setErr("");
+      setLoading(true); setErr("");
       try {
         const res = await fetch(`${QURAN_API}?jenis=surat`);
         const data = await res.json();
         setSurat(data.data || []);
-      } catch {
-        setErr("Gagal memuat daftar surah. Periksa koneksi internet.");
-      }
+      } catch { setErr("Gagal memuat daftar surah. Periksa koneksi."); }
       setLoading(false);
     })();
   }, []);
 
-  // Simpan posisi terakhir dibaca (hanya ke ref + localStorage agar tak memicu re-render saat scroll)
   const persistTerakhir = (info, ayah) => {
     const rec = { number: info.number, name: info.name, englishName: info.englishName, ayah, waktu: Date.now() };
     terakhirRef.current = rec;
@@ -435,9 +437,7 @@ export function HalamanQuran({ t, tema }) {
   };
 
   const bukaSurat = async (s, gotoAyah) => {
-    setLoading(true);
-    setErr("");
-    setPilih(null);
+    setLoading(true); setErr(""); setPilih(null);
     gotoAyahRef.current = gotoAyah || null;
     try {
       const res = await fetch(`${QURAN_API}?jenis=ayat&surat=${s.number}`);
@@ -447,88 +447,47 @@ export function HalamanQuran({ t, tema }) {
       const indo = eds.find((e) => e.edition?.identifier === "id.indonesian") || eds[1];
       const ayat = (arab?.ayahs || []).map((a, i) => {
         let arabText = a.text;
-        // Hapus bismillah dari awal teks ayat 1 (kecuali Al-Fatihah & At-Taubah)
-        // Bismillah = 4 kata pertama. Untuk surah lain, bismillah sudah ditampilkan terpisah.
         if (a.numberInSurah === 1 && s.number !== 1 && s.number !== 9) {
           arabText = arabText.replace(/^(\S+\s+){4}/, "").trim();
         }
-        return {
-          no: a.numberInSurah,
-          global: a.number,
-          arab: arabText,
-          indo: indo?.ayahs?.[i]?.text || "",
-        };
+        return { no: a.numberInSurah, global: a.number, arab: arabText, indo: indo?.ayahs?.[i]?.text || "" };
       });
       setPilih({ info: s, ayat });
       setAyatDitandai(terakhirRef.current?.number === s.number ? terakhirRef.current.ayah : null);
       if (!gotoAyah) window.scrollTo?.(0, 0);
-    } catch {
-      setErr("Gagal memuat ayat.");
-    }
+    } catch { setErr("Gagal memuat ayat."); }
     setLoading(false);
   };
 
-  // Tandai ayat sebagai "terakhir dibaca" (eksplisit, saat di-klik)
-  const tandai = (ayah) => {
-    persistTerakhir(pilih.info, ayah);
-    setAyatDitandai(ayah);
-    setTerakhir(terakhirRef.current);
-  };
+  const tandai = (ayah) => { persistTerakhir(pilih.info, ayah); setAyatDitandai(ayah); setTerakhir(terakhirRef.current); };
 
-  // ── AUDIO MUROTTAL ──
-  const getAudio = () => {
-    if (!audioRef.current) audioRef.current = new Audio();
-    return audioRef.current;
-  };
+  const getAudio = () => { if (!audioRef.current) audioRef.current = new Audio(); return audioRef.current; };
   const putarAyat = (ayat, lanjut) => {
     if (!ayat) { setMainAyat(null); setLoadingAudio(null); return; }
     const au = getAudio();
     try { au.pause(); } catch {}
-
-    // Bersihkan handler lama sebelum pasang yang baru
-    au.onplaying = null;
-    au.onended   = null;
-    au.onerror   = null;
-    au.onstalled = null;
-
+    au.onplaying = null; au.onended = null; au.onerror = null; au.onstalled = null;
     au.src = urlAudio(qori, pilih.info.number, ayat.no);
-
-    // "playing" fire saat audio BETUL-BETUL mulai bersuara (setelah buffering selesai)
     au.onplaying = () => { setMainAyat(ayat.no); setLoadingAudio(null); };
-    au.onended   = () => {
-      if (lanjut) {
-        const idx = pilih.ayat.findIndex((x) => x.no === ayat.no);
-        putarAyat(pilih.ayat[idx + 1], true);
-      } else { setMainAyat(null); setLoadingAudio(null); }
+    au.onended = () => {
+      if (lanjut) { const idx = pilih.ayat.findIndex((x) => x.no === ayat.no); putarAyat(pilih.ayat[idx + 1], true); }
+      else { setMainAyat(null); setLoadingAudio(null); }
     };
-    au.onerror   = () => { setMainAyat(null); setLoadingAudio(null); };
-    // Jika koneksi lambat dan audio terstall, tetap tunjukkan loading
+    au.onerror = () => { setMainAyat(null); setLoadingAudio(null); };
     au.onstalled = () => { if (loadingAudio !== ayat.no) setLoadingAudio(ayat.no); };
-
-    setLoadingAudio(ayat.no);
-    setMainAyat(null);
-    au.load();
-    au.play().catch(() => { setMainAyat(null); setLoadingAudio(null); });
-
+    setLoadingAudio(ayat.no); setMainAyat(null);
+    au.load(); au.play().catch(() => { setMainAyat(null); setLoadingAudio(null); });
     document.getElementById(`ayat-${ayat.no}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
   const stopAudio = () => { try { audioRef.current?.pause(); } catch {} setMainAyat(null); setLoadingAudio(null); };
   const toggleAyat = (ayat) => { (mainAyat === ayat.no || loadingAudio === ayat.no) ? stopAudio() : putarAyat(ayat, false); };
   const putarSurah = () => { mainAyat ? stopAudio() : putarAyat(pilih.ayat[0], true); };
+  const kembaliKeDaftar = () => { stopAudio(); setPilih(null); setTerakhir(terakhirRef.current); };
 
-  const kembaliKeDaftar = () => {
-    stopAudio();
-    setPilih(null);
-    setTerakhir(terakhirRef.current); // refresh banner "lanjutkan membaca"
-  };
-
-  // Setelah surah tampil: scroll ke ayat tujuan (saat "lanjutkan membaca")
   useEffect(() => {
-    if (!pilih) return;
-    if (gotoAyahRef.current && gotoAyahRef.current > 1) {
-      const target = gotoAyahRef.current;
-      setTimeout(() => document.getElementById(`ayat-${target}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
-    }
+    if (!pilih || !gotoAyahRef.current || gotoAyahRef.current <= 1) { gotoAyahRef.current = null; return; }
+    const target = gotoAyahRef.current;
+    setTimeout(() => document.getElementById(`ayat-${target}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
     gotoAyahRef.current = null;
   }, [pilih]);
 
@@ -540,124 +499,192 @@ export function HalamanQuran({ t, tema }) {
   });
 
   const lanjutSurah = () => {
-    const r = terakhir;
-    const s = surat.find((x) => x.number === r.number);
+    const r = terakhir; const s = surat.find((x) => x.number === r.number);
     if (s) bukaSurat(s, r.ayah);
   };
 
+  const isMadinah = (s) => s.revelationType !== "Meccan";
+
+  // ── RENDER ──
   return (
-    <div style={{ padding: 16 }}>
-      {loading && <div style={{ textAlign: "center", padding: 28, color: t.subteks }}>⏳ Memuat…</div>}
-      {err && !loading && <div style={{ background: "#2a0e0e", border: "1px solid #5a1010", borderRadius: 12, padding: 14, color: "#e84040", fontSize: 13 }}>❌ {err}</div>}
+    <div style={{ minHeight: "100vh", background: t.bg }}>
 
-      {/* DETAIL SURAH (daftar ayat) */}
-      {!loading && pilih && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <button onClick={kembaliKeDaftar} style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 10, padding: "8px 14px", color: aksen, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-              ← Daftar Surah
-            </button>
-            <button onClick={() => setTerjemah((v) => !v)} style={{ background: terjemah ? aksen : t.input, border: `1px solid ${terjemah ? aksen : t.border}`, borderRadius: 10, padding: "8px 14px", color: terjemah ? "#000" : t.subteks, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-              {terjemah ? "✓ Terjemahan" : "Terjemahan"}
-            </button>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button onClick={putarSurah} style={{ background: mainAyat ? "#5a0e0e" : aksen, border: "none", borderRadius: 10, padding: "8px 14px", color: mainAyat ? "#fff" : "#000", fontSize: 12, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>
-              {mainAyat ? "⏹️ Berhenti" : "▶️ Putar Surah"}
-            </button>
-            <select value={qori} onChange={(e) => { stopAudio(); setQori(e.target.value); }} style={{ flex: 1, background: t.input, border: `1px solid ${t.border}`, borderRadius: 10, padding: "8px 12px", color: t.teks, fontSize: 12, fontWeight: 700, cursor: "pointer", outline: "none" }}>
-              {QORI.map((q) => <option key={q.id} value={q.id}>🎙️ {q.nama}</option>)}
-            </select>
-          </div>
-          {/* Header surah */}
-          <div style={{ background: `linear-gradient(135deg, ${aksen}22, ${aksen}08)`, border: `1px solid ${aksen}33`, borderRadius: 16, padding: "20px 16px", textAlign: "center" }}>
-            <div style={{ color: t.teks, fontSize: 30, fontWeight: 800, fontFamily: FONT_ARAB, marginBottom: 6 }}>{pilih.info.name}</div>
-            <div style={{ color: aksen, fontSize: 16, fontWeight: 800, marginBottom: 4 }}>{pilih.info.englishName}</div>
-            <div style={{ color: t.subteks, fontSize: 12 }}>{NAMA_INDO[pilih.info.number] || pilih.info.englishNameTranslation} · {pilih.info.numberOfAyahs} ayat · {pilih.info.revelationType === "Meccan" ? "Makkiyah" : "Madaniyah"}</div>
-          </div>
-
-          {/* Bismillah — tampil terpisah untuk semua surah kecuali At-Taubah (9) dan Al-Fatihah (1, bismillah sudah jadi ayat 1) */}
-          {pilih.info.number !== 9 && pilih.info.number !== 1 && (
-            <div style={{ textAlign: "center", padding: "16px 8px 8px", fontFamily: FONT_ARAB, fontSize: 28, lineHeight: 2, color: t.teks, direction: "rtl" }}>
-              بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-            </div>
-          )}
-
-          {/* Daftar ayat */}
-          {pilih.ayat.map((a, idx) => {
-            const isPlaying  = mainAyat === a.no;
-            const isLoading  = loadingAudio === a.no;
-            const isDitandai = ayatDitandai === a.no;
-            const isGanjil   = idx % 2 !== 0;
-            const cardBg     = isDitandai ? `${aksen}14` : isGanjil ? t.input : t.kartu;
-            const leftBorder = isPlaying ? aksen : isDitandai ? aksen : isGanjil ? `${aksen}55` : `${aksen}22`;
-            return (
-              <div key={a.no} id={`ayat-${a.no}`} data-ayah={a.no}
-                style={{ background: cardBg, border: `1px solid ${isDitandai ? aksen : t.border}`, borderLeft: `4px solid ${leftBorder}`, borderRadius: 14, padding: "14px 16px", scrollMarginTop: 70, transition: "background 0.2s" }}>
-                {/* Baris atas: nomor + aksi */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  {/* Badge nomor */}
-                  <div style={{ width: 30, height: 30, borderRadius: "50%", background: isPlaying ? aksen : `${aksen}1a`, border: `1.5px solid ${aksen}55`, color: isPlaying ? "#000" : aksen, fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{a.no}</div>
-                  {/* Tombol aksi */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <button onClick={() => tandai(a.no)} title="Tandai terakhir dibaca"
-                      style={{ background: isDitandai ? `${aksen}22` : "none", border: isDitandai ? `1px solid ${aksen}55` : "none", borderRadius: 8, padding: "4px 8px", cursor: "pointer", fontSize: 12, fontWeight: 700, color: isDitandai ? aksen : t.muted, display: "flex", alignItems: "center", gap: 4 }}>
-                      🔖{isDitandai ? <span>Terakhir dibaca</span> : null}
-                    </button>
-                    <button onClick={() => toggleAyat(a)} title="Putar ayat"
-                      style={{ width: 30, height: 30, borderRadius: "50%", background: (isPlaying || isLoading) ? aksen : `${aksen}1a`, border: `1.5px solid ${aksen}55`, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", color: (isPlaying || isLoading) ? "#000" : aksen }}>
-                      {isLoading ? "⏳" : isPlaying ? "⏸" : "▶"}
-                    </button>
-                  </div>
-                </div>
-                {/* Teks Arab */}
-                <div style={{ color: t.teks, fontSize: 26, lineHeight: 2.4, textAlign: "right", fontFamily: FONT_ARAB, direction: "rtl", marginBottom: terjemah ? 12 : 0 }}>{a.arab}</div>
-                {/* Terjemahan */}
-                {terjemah && (
-                  <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 10, color: t.subteks, fontSize: 13.5, lineHeight: 1.75, fontStyle: "italic" }}>
-                    {a.indo}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          <div style={{ color: t.muted, fontSize: 11, textAlign: "center", paddingBottom: 8 }}>Sumber: alquran.cloud — teks Uthmani (Mushaf Madinah) + terjemahan resmi Kemenag RI.</div>
+      {/* LOADING */}
+      {loading && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", gap: 16 }}>
+          <div style={{ width: 44, height: 44, border: `3px solid ${aksen}33`, borderTop: `3px solid ${aksen}`, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+          <div style={{ color: t.subteks, fontSize: 13 }}>Memuat Al-Quran…</div>
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>
       )}
 
-      {/* DAFTAR SURAH */}
+      {/* ERROR */}
+      {err && !loading && (
+        <div style={{ margin: 16, background: "#2a0e0e", border: "1px solid #5a1010", borderRadius: 14, padding: 16, color: "#e84040", fontSize: 13, display: "flex", gap: 10, alignItems: "center" }}>
+          <span style={{ fontSize: 20 }}>⚠️</span> {err}
+        </div>
+      )}
+
+      {/* ══ DETAIL SURAH ══ */}
+      {!loading && pilih && (() => {
+        const s = pilih.info;
+        const warna = gradienSurah(s.number, aksen);
+        return (
+          <div>
+            {/* Header hero surah */}
+            <div style={{ background: `linear-gradient(160deg, ${warna}ee, ${warna}88)`, padding: "20px 16px 24px", position: "relative", overflow: "hidden" }}>
+              {/* Dekorasi arabesque */}
+              <div style={{ position: "absolute", right: -20, top: -20, fontSize: 120, opacity: 0.08, fontFamily: FONT_ARAB, lineHeight: 1 }}>﷽</div>
+              {/* Nav bar */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <button onClick={kembaliKeDaftar} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20, padding: "6px 14px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  ← Surah
+                </button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setTerjemah(v => !v)} style={{ background: terjemah ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20, padding: "6px 12px", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    {terjemah ? "✓ Terjemah" : "Terjemah"}
+                  </button>
+                  <button onClick={() => setShowQori(v => !v)} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20, padding: "6px 12px", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                    🎙️
+                  </button>
+                </div>
+              </div>
+              {/* Info surah */}
+              <div style={{ textAlign: "center" }}>
+                <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
+                  {isMadinah(s) ? "Madaniyah" : "Makkiyah"} · Surah {s.number}
+                </div>
+                <div style={{ color: "#fff", fontSize: 42, fontFamily: FONT_ARAB, lineHeight: 1.3, marginBottom: 4 }}>{s.name}</div>
+                <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{NAMA_INDO[s.number]}</div>
+                <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 12 }}>{s.numberOfAyahs} Ayat</div>
+              </div>
+              {/* Tombol putar surah */}
+              <div style={{ marginTop: 18, display: "flex", justifyContent: "center" }}>
+                <button onClick={putarSurah} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.2)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 28, padding: "10px 24px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                  <span style={{ width: 28, height: 28, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: warna }}>
+                    {mainAyat ? "⏹" : "▶"}
+                  </span>
+                  {mainAyat ? "Berhenti" : "Putar Surah"}
+                </button>
+              </div>
+            </div>
+
+            {/* Dropdown pilih qori */}
+            {showQori && (
+              <div style={{ background: t.kartu, borderBottom: `1px solid ${t.border}`, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ color: t.subteks, fontSize: 11, fontWeight: 700, marginBottom: 4 }}>PILIH QORI</div>
+                {QORI.map((q) => (
+                  <button key={q.id} onClick={() => { stopAudio(); setQori(q.id); setShowQori(false); }}
+                    style={{ background: qori === q.id ? `${aksen}18` : "none", border: `1px solid ${qori === q.id ? aksen : t.border}`, borderRadius: 10, padding: "10px 14px", color: qori === q.id ? aksen : t.teks, fontSize: 13, fontWeight: qori === q.id ? 700 : 400, cursor: "pointer", textAlign: "left" }}>
+                    {qori === q.id ? "✓ " : ""}{q.nama}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Bismillah */}
+            {s.number !== 9 && s.number !== 1 && (
+              <div style={{ margin: "0 16px 4px", background: `linear-gradient(135deg, ${aksen}12, ${aksen}06)`, border: `1px solid ${aksen}22`, borderRadius: 16, padding: "18px 16px", textAlign: "center" }}>
+                <div style={{ fontFamily: FONT_ARAB, fontSize: 30, lineHeight: 2, color: t.teks, direction: "rtl" }}>
+                  بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+                </div>
+                <div style={{ color: t.muted, fontSize: 11, marginTop: 4 }}>Dengan nama Allah Yang Maha Pengasih lagi Maha Penyayang</div>
+              </div>
+            )}
+
+            {/* Daftar ayat */}
+            <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 2 }}>
+              {pilih.ayat.map((a) => {
+                const isPlaying  = mainAyat === a.no;
+                const isLoading  = loadingAudio === a.no;
+                const isDitandai = ayatDitandai === a.no;
+                return (
+                  <div key={a.no} id={`ayat-${a.no}`}
+                    style={{ background: isDitandai ? `${aksen}10` : "transparent", border: `1px solid ${isDitandai ? aksen + "44" : "transparent"}`, borderRadius: 16, padding: "16px 4px", scrollMarginTop: 70 }}>
+                    {/* Nomor & aksi */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, paddingBottom: 10, borderBottom: `1px solid ${t.border}` }}>
+                      <div style={{ width: 34, height: 34, borderRadius: "50%", background: isPlaying ? aksen : `${aksen}18`, border: `2px solid ${aksen}44`, color: isPlaying ? "#000" : aksen, fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{a.no}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <button onClick={() => tandai(a.no)}
+                          style={{ background: isDitandai ? `${aksen}20` : t.input, border: `1px solid ${isDitandai ? aksen : t.border}`, borderRadius: 20, padding: "5px 12px", cursor: "pointer", fontSize: 11, fontWeight: 700, color: isDitandai ? aksen : t.subteks }}>
+                          {isDitandai ? "🔖 Terakhir dibaca" : "🔖"}
+                        </button>
+                        <button onClick={() => toggleAyat(a)}
+                          style={{ width: 34, height: 34, borderRadius: "50%", background: (isPlaying || isLoading) ? aksen : t.input, border: `1.5px solid ${aksen}55`, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", color: (isPlaying || isLoading) ? "#000" : aksen }}>
+                          {isLoading ? "⏳" : isPlaying ? "⏸" : "▶"}
+                        </button>
+                      </div>
+                    </div>
+                    {/* Teks Arab */}
+                    <div style={{ color: t.teks, fontSize: 28, lineHeight: 2.5, textAlign: "right", fontFamily: FONT_ARAB, direction: "rtl", padding: "0 4px", marginBottom: terjemah ? 14 : 0 }}>{a.arab}</div>
+                    {/* Terjemahan */}
+                    {terjemah && (
+                      <div style={{ color: t.subteks, fontSize: 14, lineHeight: 1.8, padding: "10px 4px 0", borderTop: `1px solid ${t.border}` }}>
+                        {a.indo}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              <div style={{ color: t.muted, fontSize: 10, textAlign: "center", padding: "12px 0 24px" }}>
+                Teks Uthmani · Terjemahan Kemenag RI · alquran.cloud
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ══ DAFTAR SURAH ══ */}
       {!loading && !pilih && surat.length > 0 && (
-        <>
+        <div style={{ padding: "0 16px 24px" }}>
+          {/* Banner lanjut baca */}
           {terakhir && surat.some((s) => s.number === terakhir.number) && (
-            <button onClick={lanjutSurah} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: `linear-gradient(135deg, ${aksen}22, ${aksen}08)`, border: `1px solid ${aksen}55`, borderRadius: 12, padding: 14, cursor: "pointer", marginBottom: 12 }}>
-              <span style={{ fontSize: 24 }}>📖</span>
-              <span style={{ flex: 1 }}>
-                <span style={{ display: "block", color: t.muted, fontSize: 11 }}>Lanjutkan membaca</span>
-                <span style={{ display: "block", color: t.teks, fontSize: 14, fontWeight: 700, marginTop: 2 }}>QS {terakhir.englishName} · ayat {terakhir.ayah}</span>
-              </span>
-              <span style={{ color: aksen, fontSize: 20 }}>›</span>
+            <button onClick={lanjutSurah} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, textAlign: "left", background: `linear-gradient(135deg, ${aksen}20, ${aksen}08)`, border: `1px solid ${aksen}44`, borderRadius: 16, padding: "14px 16px", cursor: "pointer", marginBottom: 14, boxSizing: "border-box" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: `${aksen}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>📖</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: t.muted, fontSize: 11, fontWeight: 600 }}>LANJUTKAN MEMBACA</div>
+                <div style={{ color: t.teks, fontSize: 15, fontWeight: 700, marginTop: 2 }}>{NAMA_INDO[terakhir.number] || terakhir.englishName}</div>
+                <div style={{ color: aksen, fontSize: 12, marginTop: 2 }}>Ayat {terakhir.ayah}</div>
+              </div>
+              <span style={{ color: aksen, fontSize: 22 }}>›</span>
             </button>
           )}
-          <input
-            value={cari}
-            onChange={(e) => setCari(e.target.value)}
-            placeholder="Cari surah (nama / nomor)…"
-            style={{ width: "100%", background: t.input, border: `1px solid ${t.border}`, borderRadius: 10, padding: "12px 14px", color: t.teks, fontSize: 14, outline: "none", marginBottom: 12, boxSizing: "border-box" }}
-          />
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {terfilter.map((s) => (
-              <button key={s.number} onClick={() => bukaSurat(s)} style={{ display: "flex", alignItems: "center", gap: 12, textAlign: "left", background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 12, padding: 12, cursor: "pointer" }}>
-                <span style={{ width: 32, height: 32, flexShrink: 0, borderRadius: "50%", background: t.input, color: aksen, fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{s.number}</span>
-                <span style={{ flex: 1 }}>
-                  <span style={{ display: "block", color: t.teks, fontSize: 14, fontWeight: 700 }}>{s.englishName}</span>
-                  <span style={{ display: "block", color: t.muted, fontSize: 11, marginTop: 2 }}>{NAMA_INDO[s.number] || s.englishNameTranslation} · {s.numberOfAyahs} ayat · {s.revelationType === "Meccan" ? "Makkiyah" : "Madaniyah"}</span>
-                </span>
-                <span style={{ color: t.teks, fontSize: 20, fontFamily: FONT_ARAB, flexShrink: 0 }}>{s.name}</span>
-              </button>
-            ))}
-            {terfilter.length === 0 && <div style={{ color: t.muted, fontSize: 13, textAlign: "center", padding: 20 }}>Surah tidak ditemukan.</div>}
+
+          {/* Pencarian */}
+          <div style={{ position: "relative", marginBottom: 14 }}>
+            <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: t.muted, fontSize: 16 }}>🔍</span>
+            <input value={cari} onChange={(e) => setCari(e.target.value)} placeholder="Cari surah…"
+              style={{ width: "100%", background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 12, padding: "13px 14px 13px 42px", color: t.teks, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
           </div>
-        </>
+
+          {/* Daftar surah — card horizontal modern */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {terfilter.map((s) => {
+              const warna = gradienSurah(s.number, aksen);
+              return (
+                <button key={s.number} onClick={() => bukaSurat(s)}
+                  style={{ display: "flex", alignItems: "center", gap: 14, textAlign: "left", background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 16, padding: "12px 14px", cursor: "pointer", transition: "border-color 0.15s" }}>
+                  {/* Nomor surah */}
+                  <div style={{ width: 42, height: 42, borderRadius: 12, background: `linear-gradient(135deg, ${warna}cc, ${warna}66)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#fff", fontSize: 13, fontWeight: 800 }}>
+                    {s.number}
+                  </div>
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ color: t.teks, fontSize: 15, fontWeight: 700 }}>{NAMA_INDO[s.number]}</div>
+                    <div style={{ color: t.subteks, fontSize: 11, marginTop: 2, display: "flex", gap: 6 }}>
+                      <span>{s.numberOfAyahs} ayat</span>
+                      <span>·</span>
+                      <span style={{ color: isMadinah(s) ? "#3d9de8" : "#34c776" }}>{isMadinah(s) ? "Madaniyah" : "Makkiyah"}</span>
+                    </div>
+                  </div>
+                  {/* Nama Arab */}
+                  <div style={{ color: t.teks, fontSize: 22, fontFamily: FONT_ARAB, flexShrink: 0 }}>{s.name}</div>
+                </button>
+              );
+            })}
+            {terfilter.length === 0 && <div style={{ color: t.muted, fontSize: 13, textAlign: "center", padding: 30 }}>Surah tidak ditemukan.</div>}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -728,158 +755,3 @@ export function PanelSmartReminder({ catatan, isPro, onGatePro, t, tema }) {
   );
 }
 
-// ═══════════════════════ 7) HADITS SHAHIH (HadeethEnc, tanpa AI) ═════════════
-// Sumber: HadeethEnc.com via proxy /.netlify/functions/hadits.
-// Hanya memuat hadits shahih/hasan, lengkap derajat + takhrij + syarah (Bahasa Indonesia).
-const HADITS_API = "/.netlify/functions/hadits";
-
-function isRootCat(k) {
-  return k.parent_id == null || k.parent_id === 0 || k.parent_id === "0" || k.parent_id === "";
-}
-
-export function HalamanHadits({ t, tema }) {
-  const aksen = tema?.aksen || "#28c0b6";
-  const [kategori, setKategori] = useState([]);   // semua kategori (flat)
-  const [stack, setStack] = useState([]);          // breadcrumb: [{id,title}]
-  const [daftar, setDaftar] = useState(null);      // daftar hadits pada kategori daun
-  const [detail, setDetail] = useState(null);      // hadits terpilih
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setErr("");
-      try {
-        const res = await fetch(`${HADITS_API}?jenis=kategori`);
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : (data.data || []);
-        setKategori(list);
-      } catch {
-        setErr("Gagal memuat kategori. Periksa koneksi internet.");
-      }
-      setLoading(false);
-    })();
-  }, []);
-
-  const parentId = stack.length ? stack[stack.length - 1].id : null;
-  const anakKategori = parentId == null
-    ? kategori.filter(isRootCat)
-    : kategori.filter((k) => String(k.parent_id) === String(parentId));
-
-  const bukaKategori = async (k) => {
-    const punyaAnak = kategori.some((c) => String(c.parent_id) === String(k.id));
-    setStack((s) => [...s, k]);
-    setDaftar(null);
-    setDetail(null);
-    setErr("");
-    if (!punyaAnak) {
-      setLoading(true);
-      try {
-        const res = await fetch(`${HADITS_API}?jenis=daftar&kategori=${k.id}`);
-        const data = await res.json();
-        setDaftar(data.data || []);
-      } catch {
-        setErr("Gagal memuat daftar hadits.");
-      }
-      setLoading(false);
-    }
-  };
-
-  const bukaHadits = async (h) => {
-    setLoading(true);
-    setErr("");
-    try {
-      const res = await fetch(`${HADITS_API}?jenis=satu&id=${h.id}`);
-      setDetail(await res.json());
-    } catch {
-      setErr("Gagal memuat hadits.");
-    }
-    setLoading(false);
-  };
-
-  const kembali = () => {
-    setErr("");
-    if (detail) { setDetail(null); return; }
-    if (daftar) { setDaftar(null); setStack((s) => s.slice(0, -1)); return; }
-    if (stack.length) { setStack((s) => s.slice(0, -1)); return; }
-  };
-
-  const adaNav = detail || daftar || stack.length > 0;
-  const judulNav = detail ? "Hadits" : (stack.length ? stack[stack.length - 1].title : "Kategori");
-
-  const Badge = ({ teks }) => (
-    <span style={{ fontSize: 11, padding: "2px 10px", borderRadius: 10, background: "#0d5c2a", color: "#fff", fontWeight: 700 }}>{teks}</span>
-  );
-
-  return (
-    <div style={{ padding: 16 }}>
-      {adaNav && (
-        <button onClick={kembali} style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 10, padding: "8px 14px", color: aksen, fontSize: 13, fontWeight: 700, cursor: "pointer", marginBottom: 12 }}>
-          ← {judulNav}
-        </button>
-      )}
-
-      {loading && <div style={{ textAlign: "center", padding: 28, color: t.subteks }}>⏳ Memuat…</div>}
-      {err && !loading && <div style={{ background: "#2a0e0e", border: "1px solid #5a1010", borderRadius: 12, padding: 14, color: "#e84040", fontSize: 13 }}>❌ {err}</div>}
-
-      {/* DETAIL HADITS */}
-      {!loading && detail && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 14, padding: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-              {detail.grade && <Badge teks={detail.grade} />}
-              {detail.attribution && <span style={{ color: aksen, fontSize: 12, fontWeight: 700 }}>{detail.attribution}</span>}
-            </div>
-            {detail.hadith_arabic && (
-              <div style={{ color: t.teks, fontSize: 21, lineHeight: 2.2, textAlign: "right", fontFamily: FONT_ARAB, direction: "rtl", marginBottom: 12 }}>{detail.hadith_arabic}</div>
-            )}
-            <div style={{ color: t.teks, fontSize: 14.5, lineHeight: 1.8 }}>{detail.hadith_indonesian || detail.hadith}</div>
-          </div>
-
-          {detail.explanation && (
-            <div style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14 }}>
-              <div style={{ color: aksen, fontSize: 12, fontWeight: 800, marginBottom: 6, letterSpacing: 0.5 }}>📝 SYARAH</div>
-              <div style={{ color: t.subteks, fontSize: 13, lineHeight: 1.7 }}>{detail.explanation}</div>
-            </div>
-          )}
-          {detail.hints && (Array.isArray(detail.hints) ? detail.hints.length > 0 : true) && (
-            <div style={{ background: t.input, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14 }}>
-              <div style={{ color: aksen, fontSize: 12, fontWeight: 800, marginBottom: 6, letterSpacing: 0.5 }}>💡 FAEDAH</div>
-              <div style={{ color: t.subteks, fontSize: 13, lineHeight: 1.7 }}>
-                {Array.isArray(detail.hints) ? detail.hints.join(" · ") : detail.hints}
-              </div>
-            </div>
-          )}
-          <div style={{ color: t.muted, fontSize: 11, textAlign: "center" }}>Sumber: HadeethEnc.com (Ensiklopedia Hadits Nabawi) — hanya hadits shahih/hasan.</div>
-        </div>
-      )}
-
-      {/* DAFTAR HADITS */}
-      {!loading && !detail && daftar && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {daftar.length === 0 && <div style={{ color: t.muted, fontSize: 13, textAlign: "center", padding: 20 }}>Belum ada hadits di kategori ini.</div>}
-          {daftar.map((h) => (
-            <button key={h.id} onClick={() => bukaHadits(h)} style={{ textAlign: "left", background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14, color: t.teks, fontSize: 13.5, lineHeight: 1.6, cursor: "pointer", display: "flex", gap: 10, alignItems: "flex-start" }}>
-              <span style={{ color: aksen, flexShrink: 0 }}>📜</span>
-              <span>{h.title}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* KATEGORI */}
-      {!loading && !detail && !daftar && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {anakKategori.map((k) => (
-            <button key={k.id} onClick={() => bukaKategori(k)} style={{ background: t.kartu, border: `1px solid ${t.border}`, borderRadius: 12, padding: 14, color: t.teks, fontSize: 13, fontWeight: 600, lineHeight: 1.5, cursor: "pointer", textAlign: "left", minHeight: 64, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 6 }}>
-              <span>📂 {k.title}</span>
-              {k.hadeeths_count != null && <span style={{ color: aksen, fontSize: 11, fontWeight: 700 }}>{k.hadeeths_count} hadits</span>}
-            </button>
-          ))}
-          {anakKategori.length === 0 && !err && <div style={{ color: t.muted, fontSize: 13, gridColumn: "1 / -1", textAlign: "center", padding: 20 }}>Tidak ada kategori.</div>}
-        </div>
-      )}
-    </div>
-  );
-}
