@@ -1,10 +1,10 @@
-[{
+﻿[{
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
     "package_name": "com.kapurpad.app",
     "sha256_cert_fingerprints": [
-      "PLACEHOLDER_SHA256_GANTI_SETELAH_KEYTOOL"
+      "16:0F:E4:50:74:D5:59:28:A4:68:09:DC:CA:0A:5E:03:6C:51:19:F6:29:BA:F4:32:B1:0B:8F:37:DA:AC:9C:57"
     ]
   }
 }]
