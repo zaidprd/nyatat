@@ -5,6 +5,13 @@
 [functions]
   directory = "netlify/functions"
 
+# Izinkan .well-known untuk TWA Digital Asset Links (HARUS sebelum SPA fallback)
+[[redirects]]
+  from   = "/.well-known/*"
+  to     = "/.well-known/:splat"
+  status = 200
+  force  = true
+
 # SPA fallback: semua route ke index.html
 [[redirects]]
   from   = "/*"

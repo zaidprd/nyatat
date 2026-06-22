@@ -1,0 +1,40 @@
+{
+  "packageId": "com.kapurpad.app",
+  "host": "kapurpad.netlify.app",
+  "name": "KapurPad - Catatan Harian",
+  "launcherName": "KapurPad",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#f0ede8",
+  "navigationColor": "#f0ede8",
+  "navigationColorDark": "#16140a",
+  "navigationDividerColor": "#f0ede8",
+  "navigationDividerColorDark": "#16140a",
+  "backgroundColor": "#f0ede8",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://kapurpad.netlify.app/icons/icon-512.png",
+  "maskableIconUrl": "https://kapurpad.netlify.app/icons/icon-512.png",
+  "monochromeIconUrl": "https://kapurpad.netlify.app/icons/icon-512.png",
+  "shortcuts": [],
+  "signingKey": {
+    "path": "./kapurpad.keystore",
+    "alias": "kapurpad"
+  },
+  "appVersionCode": 1,
+  "appVersionName": "1.0.0",
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://kapurpad.netlify.app/",
+  "minSdkVersion": 19,
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://kapurpad.netlify.app/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": { "enabled": false },
+    "playBilling": { "enabled": false }
+  },
+  "alphaDependencies": { "enabled": false },
+  "serviceAccountJsonFile": ""
+}

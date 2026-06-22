@@ -2816,15 +2816,11 @@ export default function App() {
   const [menuTambah,   setMenuTambah]   = useState(false);
   const [lihatArsip,   setLihatArsip]   = useState(false);
   const [lihatSampah,  setLihatSampah]  = useState(false);
-  const [modalPro,     setModalPro]     = useState(false);
   const [modalTmpl,    setModalTmpl]    = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [pinCheck,     setPinCheck]     = useState(!!muatSettings().pin);
   const [notif,        setNotif]        = useState(null);
-  const [isPro,        setIsPro]        = useState(cekStatusPro);
-  const [gatePro,      setGatePro]      = useState(null);
-  const [notifSukses,  setNotifSukses]  = useState(false);
-  const [lastOrderId,  setLastOrderId]  = useState(() => { try { return localStorage.getItem("kapurpad_last_order") || ""; } catch { return ""; } });
+  const isPro = true;
   const [prefillKal,   setPrefillKal]   = useState(null);
   const [folders,      setFolders]      = useState(muatFolder);
   const [folderFilter, setFolderFilter] = useState("semua"); // "semua" | folder.id
@@ -2833,7 +2829,7 @@ export default function App() {
   const [promptInstall,setPromptInstall]= useState(null); // event beforeinstallprompt
   const [showInstall,  setShowInstall]  = useState(false);
 
-  const bukaGatePro = (pesan) => setGatePro(pesan);
+  const bukaGatePro = () => {};
 
   const toLocalInput = (d) => {
     const p = n => String(n).padStart(2,"0");
@@ -2859,39 +2855,6 @@ export default function App() {
   useEffect(() => { simpanSettings(settings); }, [settings]);
   useEffect(() => { simpanFolder(folders); }, [folders]);
 
-  // Cek status Pro saat app dibuka dan saat fokus kembali
-  useEffect(() => {
-    const cek = () => setIsPro(cekStatusPro());
-    cek();
-    window.addEventListener("focus", cek);
-    return () => window.removeEventListener("focus", cek);
-  }, []);
-
-  // Pulihkan Pro untuk order yang sempat pending (mis. transfer bank yang baru lunas)
-  useEffect(() => {
-    let pending;
-    try { pending = localStorage.getItem("kapurpad_pending_order"); } catch {}
-    if (!pending || cekStatusPro()) return;
-    fetch("/.netlify/functions/cek-status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ order_id: pending }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.transaction_status === "settlement" || data.transaction_status === "capture") {
-          aktifkanPro();
-          setIsPro(true);
-          try {
-            const lo = localStorage.getItem("kapurpad_last_order") || "";
-            setLastOrderId(lo);
-          } catch {}
-          try { localStorage.removeItem("kapurpad_pending_order"); } catch {}
-          setNotifSukses(true);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   // Jadwalkan notifikasi dzikir harian jika diaktifkan
   useEffect(() => { jadwalkanNotifDzikir(); }, []);
@@ -3000,7 +2963,7 @@ export default function App() {
   // ── PENGATURAN ──
   if (showSettings) return (
     <HalamanPengaturan settings={settings} onUbah={setSettings} onTutup={()=>setShowSettings(false)} catatan={catatan} isPro={isPro} onGatePro={bukaGatePro} t={t} tampilNotif={tampilNotif}
-      onAktivasiSukses={()=>{ aktifkanPro(); setIsPro(true); }}/>
+      onAktivasiSukses={()=>{}}/>
   );
 
   // ── EDITOR ──
@@ -3046,18 +3009,6 @@ export default function App() {
       )}
 
       {/* MODALS */}
-      {gatePro && (
-        <GatePro
-          pesan={gatePro}
-          onUpgrade={()=>{ setGatePro(null); setModalPro(true); }}
-          onTutup={()=>setGatePro(null)}
-          t={t}
-        />
-      )}
-      {modalPro  && <ModalPremium t={t} tampilNotif={tampilNotif}
-        onTutup={()=>setModalPro(false)}
-        onSukses={()=>{ aktifkanPro(); setIsPro(true); setGatePro(null); setModalPro(false); try { setLastOrderId(localStorage.getItem("kapurpad_last_order")||""); } catch {} setNotifSukses(true); }}/>}
-      {notifSukses && <NotifSukses t={t} orderId={lastOrderId} onTutup={()=>setNotifSukses(false)}/>}
       {modalTmpl && <ModalTemplate onPilih={tp=>{setTmplDipilih(tp);setModalTmpl(false);setSedangBuat(true);}} onTutup={()=>setModalTmpl(false)} isPro={isPro} onGatePro={bukaGatePro}/>}
       {modalFolder && (
         <ModalBuatFolder
@@ -3084,16 +3035,6 @@ export default function App() {
               <span style={{fontSize:26,fontWeight:900,color:tema.aksen,letterSpacing:-1,fontFamily:"Georgia,serif"}}>pad</span>
               {settings.namaPengguna && <span style={{fontSize:12,color:t.muted,marginLeft:8}}>· {settings.namaPengguna}</span>}
             </div>
-            {isPro ? (
-              <span style={{background:"#191200",border:"1px solid #f5c84266",borderRadius:20,padding:"5px 12px",color:"#f5c842",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
-                👑 Pro
-              </span>
-            ) : (
-              <button onClick={()=>setModalPro(true)}
-                style={{background:"#191200",border:"1px solid #f5c84244",borderRadius:20,padding:"5px 12px",color:"#f5c842",fontSize:12,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
-                👑 Pro
-              </button>
-            )}
           </div>
           {tampilan==="catatan" && (
             <button onClick={()=>setMenuUrut(!menuUrut)}
